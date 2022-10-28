@@ -13,7 +13,7 @@ var roleCarrier = require('role.carrier');
 var roleAttacker = require('role.attacker');
 var roleSplitter = require('role.splitter');
 
-var tower_repair_walls = true;
+var tower_repair_walls = false;
 var wall_max_hp = 2000000;
 var rampart_max_hp = 10000000;
 
