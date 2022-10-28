@@ -87,6 +87,7 @@ var roleSplitter = {
                     }
                     else { // absolutely no target -> idle
                         creep.memory.collecting = true;
+                        console.log(creep.room.find(FIND_MY_SPAWNS)[0]);
                         creep.moveTo(creep.room.find(FIND_MY_SPAWNS)[0], { visualizePathStyle: { stroke: '#ffffff' } });
                     }
                 }
