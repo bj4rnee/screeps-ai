@@ -80,15 +80,13 @@ var roleSplitter = {
                     }
                 } else {
 
-                    if (link_targets) {
-                        console.log(link_targets);
+                    if (link_targets.lenght > 0) {
                         if (creep.transfer(link_targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                             creep.moveTo(link_targets[0], { visualizePathStyle: { stroke: '#ffffff' } });
                         }
                     }
                     else { // absolutely no target -> idle
                         creep.memory.collecting = true;
-                        console.log(creep.room.find(FIND_MY_SPAWNS)[0]);
                         creep.moveTo(creep.room.find(FIND_MY_SPAWNS)[0], { visualizePathStyle: { stroke: '#ffffff' } });
                     }
                 }
