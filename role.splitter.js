@@ -81,6 +81,7 @@ var roleSplitter = {
                 } else {
 
                     if (link_targets) {
+                        console.log(link_targets);
                         if (creep.transfer(link_targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                             creep.moveTo(link_targets[0], { visualizePathStyle: { stroke: '#ffffff' } });
                         }
