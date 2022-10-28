@@ -4,6 +4,7 @@
 // TODO room controller decay failsave
 // DONE harvester not swap when dead
 // DONE carriers arent split evenly
+// This is a test comment to see if it gets synced up
 
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
@@ -41,7 +42,7 @@ function genUUID() {
 }
 
 module.exports.loop = function () {
-
+console.log("it worked!!");
     // garbage collector
     for (var name in Memory.creeps) {
         if (!Game.creeps[name]) {
