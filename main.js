@@ -4,7 +4,6 @@
 // TODO room controller decay failsave
 // DONE harvester not swap when dead
 // DONE carriers arent split evenly
-// This is a test comment to see if it gets synced up
 
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
@@ -19,7 +18,7 @@ var wall_max_hp = 2000000;
 var rampart_max_hp = 10000000;
 
 function queueCreep(room, attributes, name, role) {
-    Memory.spawn_queue = 0;
+    room.memory.spawn_queue = 0;
     return true;
 }
 
@@ -41,8 +40,9 @@ function genUUID() {
     });
 }
 
+// main game loop function
 module.exports.loop = function () {
-console.log("it worked!!");
+
     // garbage collector
     for (var name in Memory.creeps) {
         if (!Game.creeps[name]) {
