@@ -84,6 +84,7 @@ module.exports.loop = function () {
     if (curRoom.energyAvailable < curRoom.energyCapacityAvailable) {
         curRoom.memory.energyfull = false;
     } else { curRoom.memory.energyfull = true; }
+    if (curRoom.storage.store[RESOURCE_ENERGY] >= curRoom.storage.store.getCapacity() * 0.75) { tower_repair_walls = true; }
     // -------------------------------------
 
     // -------------------------------------
@@ -192,10 +193,10 @@ module.exports.loop = function () {
                     console.log('Spawning new carrier: ' + newName);
                 }
                 var newName = 'H-' + genUUID();
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([WORK, WORK, MOVE], newName,
-                        { memory: { role: 'harvester' } }))) {
-                        console.log('Spawning new harvester: ' + newName);
-                    }
+                if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([WORK, WORK, MOVE], newName,
+                    { memory: { role: 'harvester' } }))) {
+                    console.log('Spawning new harvester: ' + newName);
+                }
             }
             else {
                 if (harvesters.length < e_sources.length) {
