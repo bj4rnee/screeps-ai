@@ -324,7 +324,7 @@ module.exports.loop = function () {
             if (upgraders.length < nu) { //
                 var newName = 'U-' + genUUID();
                 if (curRoom.memory.link_avail_ug) {
-                    var u_body = [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE];
+                    var u_body = [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY];
                 }
                 else {
                     var u_body = [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE];
