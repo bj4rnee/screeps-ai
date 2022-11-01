@@ -433,7 +433,7 @@ module.exports.loop = function () {
                     console.log('Spawning new defender: ' + newName);
                 }
             }
-            if (carriers.length < e_sources.length+m_sources.length) { // every e_source + dedicated mineral carrier
+            if (carriers.length < e_sources.length + m_sources.length) { // every e_source + dedicated mineral carrier
                 var newName = 'C-' + genUUID();
                 if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY], newName,
                     { memory: { role: 'carrier' } }))) {
@@ -493,7 +493,13 @@ module.exports.loop = function () {
         for (var h = 0; h < harvesters.length; h++) { if (harvesters[h].memory.sourceID == e_sources[s].id) { assigned = true; } }
         //console.log('source ' + e_sources[s].id + ' ' + assigned)
         if (!assigned) {
-            for (var a = 0; a < harvesters.length; a++) { if (harvesters[a].memory.sourceID == undefined) { var harv = harvesters[a]; harv.memory.sourceID = e_sources[s].id; break; } }
+            for (var a = 0; a < harvesters.length; a++) {
+                if (harvesters[a].memory.sourceID == undefined) {
+                    var harv = harvesters[a];
+                    harv.memory.sourceID = e_sources[s].id;
+                    break;
+                }
+            }
         }
         // shitcode:
         // var harv = harvesters[s];
@@ -548,11 +554,14 @@ module.exports.loop = function () {
                 var assigned = false;
                 for (var a = 0; a < carriers.length; a++) { if (carriers[a].memory.containerID == containers[c].id) { assigned = true; } }
                 //console.log('container ' + containers[c].id + ' ' + assigned)
-                var carr = carriers[c];
-                if (carr && !assigned) {
-                    //if (carr.memory.containerID == undefined) {
-                    carr.memory.containerID = containers[c].id;
-                    //}
+                if (!assigned) {
+                    for (var b = 0; b < carriers.length; b++) {
+                        if (carriers[b].memory.containerID == undefined) {
+                            var carr = carriers[b];
+                            carr.memory.containerID = containers[c].id;
+                            break;
+                        }
+                    }
                 }
             }
         }
