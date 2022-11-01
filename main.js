@@ -84,7 +84,7 @@ module.exports.loop = function () {
     if (curRoom.energyAvailable < curRoom.energyCapacityAvailable) {
         curRoom.memory.energyfull = false;
     } else { curRoom.memory.energyfull = true; }
-    if (curRoom.storage.store[RESOURCE_ENERGY] >= curRoom.storage.store.getCapacity() * 0.75) { tower_repair_walls = true; }
+    if (curRoom.storage.store[RESOURCE_ENERGY] >= curRoom.storage.store.getCapacity() * 0.75) { tower_repair_walls = true; } else { tower_repair_walls = false; }
     // -------------------------------------
 
     // -------------------------------------
@@ -169,6 +169,27 @@ module.exports.loop = function () {
     }
     // -------------------------------------
 
+    // -------------------------------------
+    // market and terminal trades
+    // -------------------------------------
+    if (curRoom.terminal && (Game.time % 50 == 0)) {
+        if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[RESOURCE_UTRIUM] >= 2000) {
+            var orders = Game.market.getAllOrders(order => order.resourceType == RESOURCE_UTRIUM &&
+                order.type == ORDER_BUY &&
+                Game.market.calcTransactionCost(200, curRoom.name, order.roomName) < 400);
+            console.log('Utrium buy orders found: ' + orders.length);
+            orders.sort(function (a, b) { return b.price - a.price; });
+            console.log('Best price: ' + orders[0].price);
+            if (orders[0].price > 0.7) {
+                var result = Game.market.deal(orders[0].id, 200, curRoom.name);
+                if (result == 0) {
+                    console.log('Order completed successfully');
+                }
+            }
+        }
+    }
+    // -------------------------------------
+
 
     //array of harvesters
     var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
@@ -240,7 +261,7 @@ module.exports.loop = function () {
         case 2:
             if (curRoom.memory.energyfull) {
                 var nb = 2;
-                var nu = 7;
+                var nu = 6;
                 var nd = 0;
             } else {// energy save mode -> prioritise harvesters and carriers
                 var nb = 1;
@@ -392,7 +413,7 @@ module.exports.loop = function () {
             if (upgraders.length < nu) { //
                 var newName = 'U-' + genUUID();
                 if (curRoom.memory.link_avail_ug) {
-                    var u_body = [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE];
+                    var u_body = [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY];
                 }
                 else {
                     var u_body = [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE];
@@ -528,8 +549,8 @@ module.exports.loop = function () {
     }
 
     // invader failsave
-    if (curRoom.memory.attacked && true) {
-
+    if (curRoom.memory.attacked) {
+        Game.notify(curRoom.name + " is being attacked by " + JSON.stringify(creep.room.find(FIND_HOSTILE_CREEPS).map(a => a.name)));
     }
 
     //creep run loop
