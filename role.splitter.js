@@ -1,5 +1,5 @@
-// the splitter collects energy from a central storage and distributes it to [spawn, extension, tower, link]
-// priority                                                                   1      1          2      3
+// the splitter collects energy from a central storage and distributes it to [spawn, extension, tower, link, terminal]
+// priority                                                                   1      1          2      3     4
 var roleSplitter = {
 
     /** @param {Creep} creep **/
@@ -62,6 +62,7 @@ var roleSplitter = {
             });
             // NOTE link_targets becomes a singular target object at this point
             link_targets = creep.room.find(FIND_MY_SPAWNS)[0].pos.findInRange(link_targets, 6);
+            var terminal = creep.room.terminal;
 
 
             if (prio_targets.length > 0) {
@@ -85,9 +86,16 @@ var roleSplitter = {
                             creep.moveTo(link_targets[0], { visualizePathStyle: { stroke: '#ffffff' } });
                         }
                     }
-                    else { // absolutely no target -> idle
-                        creep.memory.collecting = true;
-                        creep.moveTo(creep.room.find(FIND_MY_SPAWNS)[0], { visualizePathStyle: { stroke: '#ffffff' } });
+                    else { 
+                        if (terminal && terminal.store[RESOURCE_ENERGY]<=2500) {
+                            if (creep.transfer(terminal, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(terminal, { visualizePathStyle: { stroke: '#ffffff' } });
+                            }
+                        }
+                        else { // absolutely no target -> idle
+                            creep.memory.collecting = true;
+                            creep.moveTo(creep.room.find(FIND_MY_SPAWNS)[0], { visualizePathStyle: { stroke: '#ffffff' } });
+                        }
                     }
                 }
             }

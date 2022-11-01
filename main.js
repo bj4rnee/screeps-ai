@@ -175,14 +175,14 @@ module.exports.loop = function () {
     // market and terminal trades
     // -------------------------------------
     if (curRoom.terminal && (Game.time % 50 == 0)) {
-        if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[RESOURCE_UTRIUM] >= 2000) {
-            var orders = Game.market.getAllOrders(order => order.resourceType == RESOURCE_UTRIUM &&
+        if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[m_sources.mineralType] >= 2000) {
+            var orders = Game.market.getAllOrders(order => order.resourceType == m_sources.mineralType &&
                 order.type == ORDER_BUY &&
                 Game.market.calcTransactionCost(200, curRoom.name, order.roomName) < 400);
-            console.log('Utrium buy orders found: ' + orders.length);
+            console.log("'" + m_sources.mineralType + "'" + ' buy orders found: ' + orders.length);
             orders.sort(function (a, b) { return b.price - a.price; });
             console.log('Best price: ' + orders[0].price);
-            if (orders[0].price > 0.7) {
+            if (orders[0].price > 2.8 && false) {
                 var result = Game.market.deal(orders[0].id, 200, curRoom.name);
                 if (result == 0) {
                     console.log('Order completed successfully');

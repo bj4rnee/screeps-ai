@@ -5,4 +5,5 @@ AI used in the game Screeps: World
 [ ] improve screep queueing and spawning\
 [ ] add Game.notify() to important events\
 [ ] improve active defense logic\
+[ ] refactor carrier\
 [x] repair walls, if excess of energy
