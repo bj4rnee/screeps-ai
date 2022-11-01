@@ -5,7 +5,7 @@ var roleCarrier = {
     /** @param {Creep} creep **/
     run: function (creep) {
         // no energy -> collect
-        if (creep.store[RESOURCE_ENERGY] <= 0) {
+        if (_.sum(creep.carry) <= 0) {
             creep.memory.collecting = true;
         }
         // full energy -> transfer
@@ -87,10 +87,10 @@ var roleCarrier = {
                 var terminal = creep.room.terminal;
 
                 if (creep.memory.mineralType || Object.keys(creep.store).some(item => BASE_MINERALS.includes(item))) {
-                    if (creep.transfer(terminal, RESOURCES_ALL) == ERR_NOT_IN_RANGE && terminal.store.getFreeCapacity(creep.memory.mineralType) > 0) {
+                    if (creep.transfer(terminal, creep.memory.mineralType) == ERR_NOT_IN_RANGE && terminal.store.getFreeCapacity(creep.memory.mineralType) > 0) {
                         creep.moveTo(terminal, { visualizePathStyle: { stroke: '#ffffff' } });
                     } else {
-                        if (creep.transfer(storage[0], RESOURCES_ALL) == ERR_NOT_IN_RANGE) {
+                        if (creep.transfer(storage[0], creep.memory.mineralType) == ERR_NOT_IN_RANGE) {
                             creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
                         }
                     }
