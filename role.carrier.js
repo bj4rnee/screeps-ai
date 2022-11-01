@@ -48,7 +48,7 @@ var roleCarrier = {
             if (creep.memory.collecting && creep.store.getFreeCapacity() > 0 && creep.memory.containerID) {
                 var assigned_csource = Game.getObjectById(creep.memory.containerID);
 
-                var dropPoints = [...creep.room.find(FIND_DROPPED_RESOURCES, { filter: (r) => r.resourceType == RESOURCE_ENERGY })];
+                var dropPoints = [...creep.room.find(FIND_DROPPED_RESOURCES)];//, { filter: (r) => r.resourceType == RESOURCE_ENERGY })];
                 var closest_DPoint = assigned_csource.pos.findClosestByRange(dropPoints);
 
                 var csources = creep.room.find(FIND_STRUCTURES, {
@@ -59,13 +59,14 @@ var roleCarrier = {
                 });
                 var closest_csource = creep.pos.findClosestByPath(csources);
 
-                // if theres dropped energy near source (carriers died)
+                // if theres dropped energy OR OTHER RESOURCE! near (carrier died)
                 if (creep.pos.getRangeTo(closest_DPoint) <= 6) {
-                    if (creep.pickup(closest_DPoint, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                    var type = closest_DPoint.resourceType;
+                    if (creep.pickup(closest_DPoint, type) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(closest_DPoint, { visualizePathStyle: { stroke: '#0095ff' } });
                     }
                 } else {
-                    //check contents of container -> if mineral is found, take it
+                    //check contents of assigned container -> if mineral is found, take it
                     if (!creep.memory.mineralType && Object.keys(assigned_csource.store).some(item => BASE_MINERALS.includes(item))) {
                         var m_target = creep.room.find(FIND_MINERALS)[0];
                         creep.memory.mineralType = m_target.mineralType;
@@ -92,10 +93,12 @@ var roleCarrier = {
                             creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
                         }
                     } else {
-                        if (creep.transfer(terminal, creep.memory.mineralType) == ERR_NOT_IN_RANGE && terminal.store.getFreeCapacity(creep.memory.mineralType) > 0) {
+                        let stored_resources = _.filter(Object.keys(creep.store), resource => creep.store[resource] > 0);
+                        var type = stored_resources[0];
+                        if (creep.transfer(terminal, type) == ERR_NOT_IN_RANGE && terminal.store.getFreeCapacity(type) > 0) {
                             creep.moveTo(terminal, { visualizePathStyle: { stroke: '#ffffff' } });
                         } else {
-                            if (creep.transfer(storage[0], creep.memory.mineralType) == ERR_NOT_IN_RANGE) {
+                            if (creep.transfer(storage[0], type) == ERR_NOT_IN_RANGE) {
                                 creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
                             }
                         }
