@@ -66,9 +66,9 @@ var roleCarrier = {
                     }
                 } else {
                     //check contents of container -> if mineral is found, take it
-                    if(!creep.memory.mineralType && Object.keys(assigned_csource.store).some(item => BASE_MINERALS.includes(item))){
-                    var m_target = creep.room.find(FIND_MINERALS)[0];
-                    creep.memory.mineralType = m_target.mineralType;
+                    if (!creep.memory.mineralType && Object.keys(assigned_csource.store).some(item => BASE_MINERALS.includes(item))) {
+                        var m_target = creep.room.find(FIND_MINERALS)[0];
+                        creep.memory.mineralType = m_target.mineralType;
                     }
                     var res_to_wd = creep.memory.mineralType ? creep.memory.mineralType : RESOURCE_ENERGY;
                     if (creep.withdraw(assigned_csource, res_to_wd) == ERR_NOT_IN_RANGE) {
@@ -81,7 +81,18 @@ var roleCarrier = {
 
                 // important: if theres splitters, we just need to fill the central storage
                 var storage = [...creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType == STRUCTURE_STORAGE })];
-  
+                var terminal = creep.room.terminal;
+
+                if (creep.memory.mineralType) {
+                    if (creep.transfer(terminal, creep.memory.mineralType) == ERR_NOT_IN_RANGE && terminal.store.getFreeCapacity(creep.memory.mineralType) > 0) {
+                        creep.moveTo(terminal, { visualizePathStyle: { stroke: '#ffffff' } });
+                    }else{
+                        if (creep.transfer(storage[0], creep.memory.mineralType) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
+                        } 
+                    }
+                }
+
                 if (_.filter(Game.creeps, (creep) => creep.memory.role == 'splitter').length > 0 && storage[0].store.getFreeCapacity() > 0) {
                     if (creep.transfer(storage[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
