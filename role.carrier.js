@@ -70,7 +70,7 @@ var roleCarrier = {
                         var m_target = creep.room.find(FIND_MINERALS)[0];
                         creep.memory.mineralType = m_target.mineralType;
                     }
-                    if(creep.memory.mineralType && assigned_csource.store[RESOURCE_ENERGY]>0){
+                    if (creep.memory.mineralType && assigned_csource.store[RESOURCE_ENERGY] > 0) {
                         creep.memory.mineralType = undefined;
                     }
                     var res_to_wd = creep.memory.mineralType ? creep.memory.mineralType : RESOURCE_ENERGY;
@@ -86,65 +86,66 @@ var roleCarrier = {
                 var storage = [...creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType == STRUCTURE_STORAGE })];
                 var terminal = creep.room.terminal;
 
-                if (creep.memory.mineralType || creep.store[creep.memory.mineralType]>0) {
+                if (creep.memory.mineralType || Object.keys(creep.store).some(item => BASE_MINERALS.includes(item))) {
                     if (creep.transfer(terminal, creep.memory.mineralType) == ERR_NOT_IN_RANGE && terminal.store.getFreeCapacity(creep.memory.mineralType) > 0) {
                         creep.moveTo(terminal, { visualizePathStyle: { stroke: '#ffffff' } });
-                    }else{
+                    } else {
                         if (creep.transfer(storage[0], creep.memory.mineralType) == ERR_NOT_IN_RANGE) {
                             creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
-                        } 
-                    }
-                }
-
-                if (_.filter(Game.creeps, (creep) => creep.memory.role == 'splitter').length > 0 && storage[0].store.getFreeCapacity() > 0) {
-                    if (creep.transfer(storage[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
-                    }
-                }
-
-                // no splitters available -> carrier must distribute
-                else {
-                    var prio_targets = creep.room.find(FIND_STRUCTURES, {
-                        filter: (structure) => {
-                            return (structure.structureType == STRUCTURE_EXTENSION || structure.structureType == STRUCTURE_SPAWN) &&
-                                structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-                        }
-                    });
-
-                    if (prio_targets.length > 0) {
-                        if (creep.transfer(prio_targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(prio_targets[0], { visualizePathStyle: { stroke: '#ffffff' } });
                         }
                     }
-                    // no priority target -> fill tower and storage
+                } else {
+
+                    if (_.filter(Game.creeps, (creep) => creep.memory.role == 'splitter').length > 0 && storage[0].store.getFreeCapacity() > 0) {
+                        if (creep.transfer(storage[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
+                        }
+                    }
+
+                    // no splitters available -> carrier must distribute
                     else {
-                        var defense_targets = creep.room.find(FIND_STRUCTURES, {
+                        var prio_targets = creep.room.find(FIND_STRUCTURES, {
                             filter: (structure) => {
-                                return (structure.structureType == STRUCTURE_TOWER) && (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) && (structure.structureType == STRUCTURE_TOWER ? (structure.store[RESOURCE_ENERGY] <= (structure.energyCapacity * 0.85)) : true);
-                            }
-                        });
-                        var all_targets = creep.room.find(FIND_STRUCTURES, {
-                            filter: (structure) => {
-                                return (structure.structureType == STRUCTURE_LINK || structure.structureType == STRUCTURE_TOWER || structure.structureType == STRUCTURE_STORAGE) &&
-                                    (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) && (structure.structureType == STRUCTURE_TOWER ? (structure.store[RESOURCE_ENERGY] <= (structure.energyCapacity * 0.85)) : true);
+                                return (structure.structureType == STRUCTURE_EXTENSION || structure.structureType == STRUCTURE_SPAWN) &&
+                                    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
                             }
                         });
 
-                        if (defense_targets.length > 0) {
-                            var closest_dft = creep.pos.findClosestByPath(defense_targets);
-                            if (creep.transfer(closest_dft, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(closest_dft, { visualizePathStyle: { stroke: '#ffffff' } });
+                        if (prio_targets.length > 0) {
+                            if (creep.transfer(prio_targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(prio_targets[0], { visualizePathStyle: { stroke: '#ffffff' } });
                             }
-                        } else {
-
-                            if (all_targets.length > 0) {
-                                if (creep.transfer(all_targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(all_targets[0], { visualizePathStyle: { stroke: '#ffffff' } });
+                        }
+                        // no priority target -> fill tower and storage
+                        else {
+                            var defense_targets = creep.room.find(FIND_STRUCTURES, {
+                                filter: (structure) => {
+                                    return (structure.structureType == STRUCTURE_TOWER) && (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) && (structure.structureType == STRUCTURE_TOWER ? (structure.store[RESOURCE_ENERGY] <= (structure.energyCapacity * 0.85)) : true);
                                 }
-                            }
-                            else { // absolutely no target -> idle
-                                creep.memory.collecting = true;
-                                creep.moveTo(creep.pos.findClosestByRange(creep.room.find(FIND_MY_SPAWNS)), { visualizePathStyle: { stroke: '#ffffff' } });
+                            });
+                            var all_targets = creep.room.find(FIND_STRUCTURES, {
+                                filter: (structure) => {
+                                    return (structure.structureType == STRUCTURE_LINK || structure.structureType == STRUCTURE_TOWER || structure.structureType == STRUCTURE_STORAGE) &&
+                                        (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) && (structure.structureType == STRUCTURE_TOWER ? (structure.store[RESOURCE_ENERGY] <= (structure.energyCapacity * 0.85)) : true);
+                                }
+                            });
+
+                            if (defense_targets.length > 0) {
+                                var closest_dft = creep.pos.findClosestByPath(defense_targets);
+                                if (creep.transfer(closest_dft, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(closest_dft, { visualizePathStyle: { stroke: '#ffffff' } });
+                                }
+                            } else {
+
+                                if (all_targets.length > 0) {
+                                    if (creep.transfer(all_targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                        creep.moveTo(all_targets[0], { visualizePathStyle: { stroke: '#ffffff' } });
+                                    }
+                                }
+                                else { // absolutely no target -> idle
+                                    creep.memory.collecting = true;
+                                    creep.moveTo(creep.pos.findClosestByRange(creep.room.find(FIND_MY_SPAWNS)), { visualizePathStyle: { stroke: '#ffffff' } });
+                                }
                             }
                         }
                     }
