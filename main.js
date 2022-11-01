@@ -433,7 +433,7 @@ module.exports.loop = function () {
                     console.log('Spawning new defender: ' + newName);
                 }
             }
-            if (carriers.length < containers.length) { // every e_source + dedicated mineral carrier
+            if (carriers.length < e_sources.length+m_sources.length) { // every e_source + dedicated mineral carrier
                 var newName = 'C-' + genUUID();
                 if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY], newName,
                     { memory: { role: 'carrier' } }))) {

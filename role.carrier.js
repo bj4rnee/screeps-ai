@@ -70,6 +70,9 @@ var roleCarrier = {
                         var m_target = creep.room.find(FIND_MINERALS)[0];
                         creep.memory.mineralType = m_target.mineralType;
                     }
+                    if(creep.memory.mineralType && assigned_csource.store[RESOURCE_ENERGY]>0){
+                        creep.memory.mineralType = undefined;
+                    }
                     var res_to_wd = creep.memory.mineralType ? creep.memory.mineralType : RESOURCE_ENERGY;
                     if (creep.withdraw(assigned_csource, res_to_wd) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(assigned_csource, { visualizePathStyle: { stroke: '#0095ff' } });
@@ -83,7 +86,7 @@ var roleCarrier = {
                 var storage = [...creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType == STRUCTURE_STORAGE })];
                 var terminal = creep.room.terminal;
 
-                if (creep.memory.mineralType) {
+                if (creep.memory.mineralType || creep.store[creep.memory.mineralType]>0) {
                     if (creep.transfer(terminal, creep.memory.mineralType) == ERR_NOT_IN_RANGE && terminal.store.getFreeCapacity(creep.memory.mineralType) > 0) {
                         creep.moveTo(terminal, { visualizePathStyle: { stroke: '#ffffff' } });
                     }else{
