@@ -550,7 +550,7 @@ module.exports.loop = function () {
 
     // invader failsave
     if (curRoom.memory.attacked) {
-        Game.notify(curRoom.name + " is being attacked by " + JSON.stringify(creep.room.find(FIND_HOSTILE_CREEPS).map(a => a.name)));
+        Game.notify(curRoom.name + " is being attacked by " + JSON.stringify(curRoom.find(FIND_HOSTILE_CREEPS).map(a => a.name)));
     }
 
     //creep run loop
