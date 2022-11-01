@@ -24,7 +24,7 @@ var roleExtractor = {
             }
             var closest_container_by_source = target.pos.findClosestByRange(creep.room.find(FIND_STRUCTURES, {filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER);}}));
             if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(closest_container_by_source);
+                creep.moveTo(closest_container_by_source, { visualizePathStyle: { stroke: '#ffaa00' } });
             }
         }
         // else {

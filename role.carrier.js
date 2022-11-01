@@ -1,4 +1,5 @@
 // the carrier collects energy from ASSIGNED!!! containers! and storages! and transfers it to [spawn, extension, tower, (link)]
+BASE_MINERALS = ["H", "O", "U", "K", "L", "Z", "X"];
 var roleCarrier = {
 
     /** @param {Creep} creep **/
@@ -64,8 +65,13 @@ var roleCarrier = {
                         creep.moveTo(closest_DPoint, { visualizePathStyle: { stroke: '#0095ff' } });
                     }
                 } else {
-
-                    if (creep.withdraw(assigned_csource, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                    //check contents of container -> if mineral is found, take it
+                    if(!creep.memory.mineralType && Object.keys(assigned_csource.store).some(item => BASE_MINERALS.includes(item))){
+                    var m_target = creep.room.find(FIND_MINERALS)[0];
+                    creep.memory.mineralType = m_target.mineralType;
+                    }
+                    var res_to_wd = creep.memory.mineralType ? creep.memory.mineralType : RESOURCE_ENERGY;
+                    if (creep.withdraw(assigned_csource, res_to_wd) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(assigned_csource, { visualizePathStyle: { stroke: '#0095ff' } });
                     }
                 }

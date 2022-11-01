@@ -72,7 +72,7 @@ module.exports.loop = function () {
         }
     });
     var e_sources = curRoom.find(FIND_SOURCES); // energy sources
-    var m_sources = curRoom.find(FIND_MINERALS); // mineral sources
+    var m_sources = curRoom.find(FIND_MINERALS, { filter: (m) => { return (m.mineralAmount > 0); } }); // mineral sources
 
     // if a link system is available for upgraders to use (contr lvl 5+ only)
     var links = curRoom.find(FIND_STRUCTURES, { filter: (structure) => { return (structure.structureType == STRUCTURE_LINK); } });
@@ -433,7 +433,7 @@ module.exports.loop = function () {
                     console.log('Spawning new defender: ' + newName);
                 }
             }
-            if (carriers.length < e_sources.length) { // carriers can share extraction resource logistic
+            if (carriers.length < containers.length) { // every e_source + dedicated mineral carrier
                 var newName = 'C-' + genUUID();
                 if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY], newName,
                     { memory: { role: 'carrier' } }))) {
