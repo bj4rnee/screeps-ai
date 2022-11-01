@@ -12,6 +12,7 @@ var roleDefender = require('role.defender');
 var roleCarrier = require('role.carrier');
 var roleAttacker = require('role.attacker');
 var roleSplitter = require('role.splitter');
+var roleExtractor = require('role.extractor');
 
 var tower_repair_walls = false;
 var wall_max_hp = 2000000;
@@ -70,7 +71,8 @@ module.exports.loop = function () {
             return (structure.structureType == STRUCTURE_CONTAINER);
         }
     });
-    var e_sources = curRoom.find(FIND_SOURCES);
+    var e_sources = curRoom.find(FIND_SOURCES); // energy sources
+    var m_sources = curRoom.find(FIND_MINERALS); // mineral sources
 
     // if a link system is available for upgraders to use (contr lvl 5+ only)
     var links = curRoom.find(FIND_STRUCTURES, { filter: (structure) => { return (structure.structureType == STRUCTURE_LINK); } });
@@ -199,6 +201,7 @@ module.exports.loop = function () {
     var carriers = _.filter(Game.creeps, (creep) => creep.memory.role == 'carrier');
     var attackers = _.filter(Game.creeps, (creep) => creep.memory.role == 'attacker');
     var splitters = _.filter(Game.creeps, (creep) => creep.memory.role == 'splitter');
+    var extractors = _.filter(Game.creeps, (creep) => creep.memory.role == 'extractor');
     //console.log('Harvesters: ' + harvesters.length);
 
     // creep manager
@@ -430,7 +433,7 @@ module.exports.loop = function () {
                     console.log('Spawning new defender: ' + newName);
                 }
             }
-            if (carriers.length < containers.length) {//containers.length
+            if (carriers.length < e_sources.length) { // carriers can share extraction resource logistic
                 var newName = 'C-' + genUUID();
                 if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY], newName,
                     { memory: { role: 'carrier' } }))) {
@@ -442,6 +445,13 @@ module.exports.loop = function () {
                 if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY], newName,
                     { memory: { role: 'splitter' } }))) {
                     console.log('Spawning new splitter: ' + newName);
+                }
+            }
+            if (extractors.length < m_sources.length) {
+                var newName = 'E-' + genUUID();
+                if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([WORK, WORK, WORK, WORK, WORK, MOVE, MOVE], newName,
+                    { memory: { role: 'extractor' } }))) {
+                    console.log('Spawning new extractor: ' + newName);
                 }
             }
             break;
@@ -558,6 +568,10 @@ module.exports.loop = function () {
         var creep = Game.creeps[name];
         if (creep.memory.role == 'harvester') {
             roleHarvester.run(creep);
+            continue;
+        }
+        if (creep.memory.role == 'extractor') {
+            roleExtractor.run(creep);
             continue;
         }
         if (creep.memory.role == 'upgrader') {
