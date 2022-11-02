@@ -182,8 +182,8 @@ module.exports.loop = function () {
             console.log("'" + m_sources[0].mineralType + "'" + ' buy orders found: ' + orders.length);
             orders.sort(function (a, b) { return b.price - a.price; });
             console.log('Best price: ' + orders[0].price);
-            if (orders[0].price > 2.8 && false) {
-                var result = Game.market.deal(orders[0].id, 200, curRoom.name);
+            if (orders[0].price > 5.1) {
+                var result = Game.market.deal(orders[0].id, 500, curRoom.name);
                 if (result == 0) {
                     console.log('Order completed successfully');
                 }
