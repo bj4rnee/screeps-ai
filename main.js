@@ -73,7 +73,10 @@ module.exports.loop = function () {
         }
     });
     var e_sources = curRoom.find(FIND_SOURCES); // energy sources
-    var m_sources = curRoom.find(FIND_MINERALS, { filter: (m) => { return (m.mineralAmount > 0); } }); // mineral sources
+    var m_sources = curRoom.find(FIND_MINERALS, { filter: (m) => { return (m.mineralAmount > 0); } }); // active mineral sources
+    if(!curRoom.memory.mineralType){
+        curRoom.memory.mineralType = curRoom.find(FIND_MINERALS)[0].mineralType;
+    }
 
     // if a link system is available for upgraders to use (contr lvl 5+ only)
     var links = curRoom.find(FIND_STRUCTURES, { filter: (structure) => { return (structure.structureType == STRUCTURE_LINK); } });
@@ -176,11 +179,11 @@ module.exports.loop = function () {
     // market and terminal trades
     // -------------------------------------
     if (curRoom.terminal && (Game.time % 10 == 0)) {
-        if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[m_sources[0].mineralType] >= 2000) {
-            var orders = Game.market.getAllOrders(order => order.resourceType == m_sources[0].mineralType &&
+        if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[curRoom.memory.mineralType] >= 2000) {
+            var orders = Game.market.getAllOrders(order => order.resourceType == curRoom.memory.mineralType &&
                 order.type == ORDER_BUY &&
                 Game.market.calcTransactionCost(200, curRoom.name, order.roomName) < 400);
-            console.log("'" + m_sources[0].mineralType + "'" + ' buy orders found: ' + orders.length);
+            console.log("'" + curRoom.memory.mineralType + "'" + ' buy orders found: ' + orders.length);
             orders.sort(function (a, b) { return b.price - a.price; });
             console.log('Best price: ' + orders[0].price);
             if (orders[0].price >= market_prices[orders[0].resourceType]) {
@@ -571,6 +574,11 @@ module.exports.loop = function () {
     // invader failsave
     if (curRoom.memory.attacked) {
         Game.notify(curRoom.name + " is being attacked by " + JSON.stringify(curRoom.find(FIND_HOSTILE_CREEPS).map(a => a.name)));
+        if (false && !curRoom.controller.safeMode && curRoom.controller.safeModeAvailable) {
+            console.log("[INFO] activating safeMode in room " + curRoom.name);
+            Game.notify("[INFO] activating safeMode in room " + curRoom.name);
+            //curRoom.controller.activateSafeMode();
+        }
     }
 
     //creep run loop
