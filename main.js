@@ -17,7 +17,7 @@ var roleExtractor = require('role.extractor');
 var tower_repair_walls = false;
 var wall_max_hp = 2000000;
 var rampart_max_hp = 10000000;
-var market_prices = { "U": 5.1, "L": 15.4, "Z": 20.0, "H": 15.0, "O": 5.5, "K": 2.0, "X": 3.9 };
+var market_prices = { "U": 5.4, "L": 15.4, "Z": 20.0, "H": 15.0, "O": 5.5, "K": 2.0, "X": 3.9 };
 
 function queueCreep(room, attributes, name, role) {
     room.memory.spawn_queue = 0;
@@ -175,7 +175,7 @@ module.exports.loop = function () {
     // -------------------------------------
     // market and terminal trades
     // -------------------------------------
-    if (curRoom.terminal && (Game.time % 50 == 0)) {
+    if (curRoom.terminal && (Game.time % 10 == 0)) {
         if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[m_sources[0].mineralType] >= 2000) {
             var orders = Game.market.getAllOrders(order => order.resourceType == m_sources[0].mineralType &&
                 order.type == ORDER_BUY &&
@@ -184,7 +184,7 @@ module.exports.loop = function () {
             orders.sort(function (a, b) { return b.price - a.price; });
             console.log('Best price: ' + orders[0].price);
             if (orders[0].price >= market_prices[orders[0].resourceType]) {
-                var result = Game.market.deal(orders[0].id, 500, curRoom.name);
+                var result = Game.market.deal(orders[0].id, 2000, curRoom.name);
                 if (result == 0) {
                     console.log('Order completed successfully');
                 }

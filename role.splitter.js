@@ -87,7 +87,7 @@ var roleSplitter = {
                         }
                     }
                     else { 
-                        if (terminal && terminal.store[RESOURCE_ENERGY]<=2500) {
+                        if (terminal && terminal.store[RESOURCE_ENERGY]<=3000) {
                             if (creep.transfer(terminal, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                                 creep.moveTo(terminal, { visualizePathStyle: { stroke: '#ffffff' } });
                             }
