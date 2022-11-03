@@ -17,3 +17,14 @@ var nearestEnergy = {
 };
 
 module.exports = nearestEnergy;
+
+function queueCreep(room, attributes, name, role) {
+    var keypointer = Math.max.apply(0, Object.keys(room.memory.spawn_queue));
+    // queue is empty
+    if (!Number.isFinite(keypointer)) {
+        keypointer = -1; // +1 will be added to kp, so first entry is 0
+    }
+    //room.memory.spawn_queue = { 0: [attributes, name, role] };
+    room.memory.spawn_queue[(keypointer + 1)] = [attributes, name, role];
+    return true;
+}

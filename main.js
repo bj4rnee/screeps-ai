@@ -19,10 +19,6 @@ var wall_max_hp = 2000000;
 var rampart_max_hp = 10000000;
 var market_prices = { "U": 5.4, "L": 15.4, "Z": 20.0, "H": 15.0, "O": 5.5, "K": 2.0, "X": 3.9 };
 
-function queueCreep(room, attributes, name, role) {
-    room.memory.spawn_queue = 0;
-    return true;
-}
 
 // MIT spec
 function genUUID() {
@@ -90,7 +86,7 @@ module.exports.loop = function () {
     if (curRoom.energyAvailable < curRoom.energyCapacityAvailable) {
         curRoom.memory.energyfull = false;
     } else { curRoom.memory.energyfull = true; }
-    if (curRoom.storage.store[RESOURCE_ENERGY] >= curRoom.storage.store.getCapacity() * 0.75) { tower_repair_walls = true; } else { tower_repair_walls = false; }
+    if (curRoom.storage && curRoom.storage.store[RESOURCE_ENERGY] >= curRoom.storage.store.getCapacity() * 0.75) { tower_repair_walls = true; } else { tower_repair_walls = false; }
     // -------------------------------------
 
     // -------------------------------------
@@ -214,12 +210,12 @@ module.exports.loop = function () {
         // level 0-2
         // spawn order at beginning: harvester, carrier, harvester, carrier, ..., upgrader, builder
         case 1:
-            if (curRoom.find(FIND_MY_CREEPS).length < e_sources.length * 2) {
-                var newName = 'C-' + genUUID();
-                if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([MOVE, MOVE, CARRY, CARRY], newName,
-                    { memory: { role: 'carrier' } }))) {
-                    console.log('Spawning new carrier: ' + newName);
-                }
+            if(curRoom.find(FIND_MY_CREEPS).length<2){
+                curRoom.memory.starting = true;
+            }else{
+                curRoom.memory.starting = undefined;
+            }
+            if (curRoom.memory.starting) {
                 var newName = 'H-' + genUUID();
                 if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([WORK, WORK, MOVE], newName,
                     { memory: { role: 'harvester' } }))) {

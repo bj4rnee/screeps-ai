@@ -1,5 +1,5 @@
 // the carrier collects energy from ASSIGNED!!! containers! and storages! and transfers it to [spawn, extension, tower, (link)]
-BASE_MINERALS = ["H", "O", "U", "K", "L", "Z", "X"];
+const BASE_MINERALS = ["H", "O", "U", "K", "L", "Z", "X"];
 var roleCarrier = {
 
     /** @param {Creep} creep **/
