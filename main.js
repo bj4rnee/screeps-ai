@@ -175,15 +175,16 @@ module.exports.loop = function () {
     // market and terminal trades
     // -------------------------------------
     if (curRoom.terminal && (Game.time % 10 == 0)) {
-        if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[curRoom.memory.mineralType] >= 2000) {
+        if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[curRoom.memory.mineralType] >= 1000) {
             var orders = Game.market.getAllOrders(order => order.resourceType == curRoom.memory.mineralType &&
                 order.type == ORDER_BUY &&
                 Game.market.calcTransactionCost(200, curRoom.name, order.roomName) < 400);
+            var available_mineral = curRoom.terminal.store[curRoom.memory.mineralType];
             console.log("'" + curRoom.memory.mineralType + "'" + ' buy orders found: ' + orders.length);
             orders.sort(function (a, b) { return b.price - a.price; });
             console.log('Best price: ' + orders[0].price);
             if (orders[0].price >= market_prices[orders[0].resourceType]) {
-                var result = Game.market.deal(orders[0].id, 2000, curRoom.name);
+                var result = Game.market.deal(orders[0].id, Math.abs(available_mineral - 1000), curRoom.name);
                 if (result == 0) {
                     console.log('Order completed successfully');
                 }
