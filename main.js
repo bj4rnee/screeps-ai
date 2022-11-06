@@ -174,8 +174,8 @@ module.exports.loop = function () {
     // -------------------------------------
     // market and terminal trades
     // -------------------------------------
-    if (curRoom.terminal && (Game.time % 10 == 0)) {
-        if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[curRoom.memory.mineralType] >= 1000) {
+    if (curRoom.terminal && (Game.time % 20 == 0)) {
+        if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[curRoom.memory.mineralType] > 1000) {
             var orders = Game.market.getAllOrders(order => order.resourceType == curRoom.memory.mineralType &&
                 order.type == ORDER_BUY &&
                 Game.market.calcTransactionCost(200, curRoom.name, order.roomName) < 400);
