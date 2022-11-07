@@ -70,8 +70,10 @@ module.exports.loop = function () {
     });
     var e_sources = curRoom.find(FIND_SOURCES); // energy sources
     var m_sources = curRoom.find(FIND_MINERALS, { filter: (m) => { return (m.mineralAmount > 0); } }); // active mineral sources
-    if(!curRoom.memory.mineralType){
-        curRoom.memory.mineralType = curRoom.find(FIND_MINERALS)[0].mineralType;
+    if (!curRoom.memory.mineralType) {
+        if (curRoom.find(FIND_MINERALS).length >= 1) {
+            curRoom.memory.mineralType = curRoom.find(FIND_MINERALS)[0].mineralType;
+        } else { curRoom.memory.mineralType = "none"; }
     }
 
     // if a link system is available for upgraders to use (contr lvl 5+ only)
@@ -210,12 +212,12 @@ module.exports.loop = function () {
         // level 0-2
         // spawn order at beginning: harvester, carrier, harvester, carrier, ..., upgrader, builder
         case 1:
-            if(curRoom.find(FIND_MY_CREEPS).length<2){
-                curRoom.memory.starting = true;
-            }else{
-                curRoom.memory.starting = undefined;
+            if (curRoom.find(FIND_MY_CREEPS).length < 1) {
+                curRoom.memory.init = true;
+            } else {
+                curRoom.memory.init = undefined;
             }
-            if (curRoom.memory.starting) {
+            if (curRoom.memory.init) {
                 var newName = 'H-' + genUUID();
                 if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([WORK, WORK, MOVE], newName,
                     { memory: { role: 'harvester' } }))) {
