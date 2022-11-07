@@ -28,3 +28,16 @@ function queueCreep(room, attributes, name, role) {
     room.memory.spawn_queue[(keypointer + 1)] = [attributes, name, role];
     return true;
 }
+
+function dequeueCreep(room){
+    var keypointer = Math.max.apply(0, Object.keys(room.memory.spawn_queue));
+    // queue is empty
+    if (!Number.isFinite(keypointer)) {
+        return false;
+    }
+    // list of spawns that are not currently spawnign a creep
+    var avail_spawns = room.find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_SPAWN && !s.spawning});
+    if (avail_spawns[0].spawnCreep([WORK, WORK, MOVE], newName,{ memory: { role: 'harvester' } })){
+
+    }
+}
