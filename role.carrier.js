@@ -45,6 +45,11 @@ var roleCarrier = {
         // stage 2+ logic
         else {
             // collect logic
+
+            //dont waste mineral by dying with it
+            if (creep.memory.collecting && creep.memory.mineralType && creep.ticksToLive <= 35) { // && creep.store[creep.memory.mineralType] > 0
+                creep.memory.collecting = false;
+            }
             if (creep.memory.collecting && creep.store.getFreeCapacity() > 0 && creep.memory.containerID) {
                 var assigned_csource = Game.getObjectById(creep.memory.containerID);
 
