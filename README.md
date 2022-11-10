@@ -6,4 +6,5 @@ AI used in the game Screeps: World
 - [ ] add Game.notify() to important events
 - [ ] improve active defense logic
 - [ ] refactor carrier
+- [ ] add lab function
 - [x] repair walls, if excess of energy

@@ -5,6 +5,7 @@
 // DONE harvester not swap when dead
 // DONE carriers arent split evenly
 
+// role imports
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
@@ -13,10 +14,15 @@ var roleCarrier = require('role.carrier');
 var roleAttacker = require('role.attacker');
 var roleSplitter = require('role.splitter');
 var roleExtractor = require('role.extractor');
+var roleLabtech = require('role.labtech');
+
+// misc imports
+var utils = require('utils');
 
 var tower_repair_walls = false;
 var wall_max_hp = 2000000;
 var rampart_max_hp = 10000000;
+// market situation for shard 3
 var market_prices = { "U": 5.4, "L": 15.4, "Z": 20.0, "H": 15.0, "O": 5.5, "K": 2.0, "X": 3.9 };
 
 
@@ -183,12 +189,13 @@ module.exports.loop = function () {
             var orders = Game.market.getAllOrders(order => order.resourceType == curRoom.memory.mineralType &&
                 order.type == ORDER_BUY &&
                 //Game.market.calcTransactionCost(200, curRoom.name, order.roomName) < 400);
+                // INFO this only consideres orders where max amount can be dealt
                 Game.market.calcTransactionCost(Math.min(available_mineral, order.remainingAmount), curRoom.name, order.roomName) <= available_energy);
             console.log("'" + curRoom.memory.mineralType + "'" + ' buy orders found: ' + orders.length);
             orders.sort(function (a, b) { return b.price - a.price; });
             console.log('Best price: ' + orders[0].price);
             if (orders[0].price >= market_prices[orders[0].resourceType]) {
-                var result = Game.market.deal(orders[0].id, available_mineral, curRoom.name);
+                var result = Game.market.deal(orders[0].id, Math.min(available_mineral, orders[0].remainingAmount), curRoom.name);
                 if (result == 0) {
                     console.log('Order completed successfully');
                 }
@@ -205,6 +212,7 @@ module.exports.loop = function () {
     var defenders = _.filter(Game.creeps, (creep) => creep.memory.role == 'defender');
     var carriers = _.filter(Game.creeps, (creep) => creep.memory.role == 'carrier');
     var attackers = _.filter(Game.creeps, (creep) => creep.memory.role == 'attacker');
+    var labtechs = _.filter(Game.creeps, (creep) => creep.memory.role == 'labtech');
     var splitters = _.filter(Game.creeps, (creep) => creep.memory.role == 'splitter');
     var extractors = _.filter(Game.creeps, (creep) => creep.memory.role == 'extractor');
     //console.log('Harvesters: ' + harvesters.length);
@@ -580,6 +588,13 @@ module.exports.loop = function () {
             Game.notify("[INFO] activating safeMode in room " + curRoom.name);
             //curRoom.controller.activateSafeMode();
         }
+    }
+
+    // controller decay failsave
+    if (curRoom.controller.my && curRoom.controller.ticksToDowngrade <= 250){
+        console.log("[INFO] controller decaying in room " + curRoom.name);
+        Game.notify("[INFO] controller decaying in room " + curRoom.name);
+        // prio queue a creep to handle controller
     }
 
     //creep run loop
