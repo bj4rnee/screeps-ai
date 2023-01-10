@@ -20,7 +20,7 @@ var roleLabtech = require('role.labtech');
 var utils = require('utils');
 
 var tower_repair_walls = false;
-var wall_max_hp = 2000000;
+var wall_max_hp = 20000000;
 var rampart_max_hp = 10000000;
 // market situation for shard 3
 var market_prices = { "U": 5.4, "L": 15.4, "Z": 20.0, "H": 15.0, "O": 5.5, "K": 2.0, "X": 3.9 };
