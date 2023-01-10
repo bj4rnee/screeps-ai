@@ -45,6 +45,10 @@ function ifoq(room, attributes, name, role) {
  * @returns true
  */
 function queueCreep(room, attributes, name, role, skip = false) {
+    // check if spawnqueue exists -> init it
+    if (!room.memory.spawn_queue) {
+        room.memory.spawn_queue = {};
+    }
     if (skip) {
         return ifoq(room, attributes, name, role);
     }
@@ -66,6 +70,9 @@ function queueCreep(room, attributes, name, role, skip = false) {
  * @returns true if successful
  */
 function dequeueCreep(room, dryRun = false, force = false) {
+    if (!room.memory.spawn_queue) {
+        return false;
+    }
     var keypointer = Math.max.apply(0, Object.keys(room.memory.spawn_queue));
     // queue is empty
     if (!Number.isFinite(keypointer)) {

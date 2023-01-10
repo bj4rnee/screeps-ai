@@ -119,7 +119,7 @@ module.exports.loop = function () {
     }
     // level 7+
     if (controllerLevel > 7) {
-        curRoom.memory.stage = 5;
+        curRoom.memory.stage = 4; // stage 5 is currently unused
     }
     // -------------------------------------
 
@@ -156,7 +156,7 @@ module.exports.loop = function () {
                     }
                     else { // no repairable non-wall structure -> repair walls too if allowed
                         if (tower_repair_walls) {
-                            var damagedStructure = _.filter(tower.room.find(FIND_STRUCTURES), (s) => (s.hits < s.hitsMax) && (s.structureType == STRUCTURE_TOWER ? (s.hits <= wall_max_hp) : true) && (s.structureType == STRUCTURE_RAMPART ? (s.hits <= rampart_max_hp) : true)).sort(function (a, b) { return +a.hits - +b.hits });
+                            var damagedStructure = _.filter(tower.room.find(FIND_STRUCTURES), (s) => (s.hits < s.hitsMax) && (s.structureType == STRUCTURE_WALL ? (s.hits <= wall_max_hp) : true) && (s.structureType == STRUCTURE_RAMPART ? (s.hits <= rampart_max_hp) : true)).sort(function (a, b) { return +a.hits - +b.hits });
                             if (damagedStructure) {
                                 tower.repair(damagedStructure[0]);
                             }
