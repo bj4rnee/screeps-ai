@@ -11,8 +11,10 @@ var roleClaimer = {
         var flags = Game.flags;
   
         if (Object.keys(flags).length > 0) {
-          // Move towards the nearest flag
-          var targetFlag = creep.pos.findClosestByRange(FIND_FLAGS);
+          // Move towards the nearest visible flag
+          var visibleFlags = Object.values(flags).filter((flag) => Game.rooms[flag.pos.roomName]);
+          var targetFlag = creep.pos.findClosestByRange(visibleFlags);
+  
           if (targetFlag) {
             if (creep.pos.isEqualTo(targetFlag.pos)) {
               // If the creep is already at the flag position, remove the flag and move to the next flag
