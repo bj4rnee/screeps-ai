@@ -95,7 +95,7 @@ module.exports.loop = function () {
     if (curRoom.energyAvailable < curRoom.energyCapacityAvailable) {
         curRoom.memory.energyfull = false;
     } else { curRoom.memory.energyfull = true; }
-    if (curRoom.storage && curRoom.storage.store[RESOURCE_ENERGY] >= curRoom.storage.store.getCapacity() * 0.75) { tower_repair_walls = true; } else { tower_repair_walls = false; }
+    if (curRoom.storage && curRoom.storage.store[RESOURCE_ENERGY] >= curRoom.storage.store.getCapacity() * 0.75) { tower_repair_walls = false; } else { tower_repair_walls = false; }
     // -------------------------------------
 
     // -------------------------------------
