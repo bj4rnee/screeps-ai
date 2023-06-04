@@ -215,6 +215,7 @@ module.exports.loop = function () {
     var labtechs = _.filter(Game.creeps, (creep) => creep.memory.role == 'labtech');
     var splitters = _.filter(Game.creeps, (creep) => creep.memory.role == 'splitter');
     var extractors = _.filter(Game.creeps, (creep) => creep.memory.role == 'extractor');
+    var claimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer');
     //console.log('Harvesters: ' + harvesters.length);
 
     // creep manager
@@ -476,6 +477,15 @@ module.exports.loop = function () {
             break;
     }
 
+    // spawn claimer if flag
+    if(Object.keys(Game.flags).length > 0){
+        var newName = 'L-' + genUUID();
+        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([MOVE, CLAIM, MOVE, MOVE, MOVE, MOVE], newName,
+            { memory: { role: 'claimer' } }))) {
+            console.log('Spawning new claimer: ' + newName);
+        }
+    }
+
 
     if (Game.spawns['spawn0'].spawning) {
         var spawningCreep = Game.creeps[Game.spawns['spawn0'].spawning.name];
@@ -600,6 +610,10 @@ module.exports.loop = function () {
     //creep run loop
     for (var name in Game.creeps) {
         var creep = Game.creeps[name];
+        if (creep.memory.role == 'claimer') {
+            roleClaimer.run(creep);
+            continue;
+        }
         if (creep.memory.role == 'harvester') {
             roleHarvester.run(creep);
             continue;
@@ -635,4 +649,16 @@ module.exports.loop = function () {
             continue;
         }
     }
+
+    if (Game.time % 100 === 0) {
+        const memorySize = JSON.stringify(Memory).length;
+        if (memorySize > 1000000) {
+          console.log('Memory approaching dangerous levels: ', memorySize);
+          console.log(
+            Object.keys(Memory)
+              .map(k => `Memory.${k}: ${JSON.stringify(Memory[k]).length}`)
+              .join('\n')
+          );
+        }
+      }
 }
