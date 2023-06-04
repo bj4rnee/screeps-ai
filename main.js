@@ -479,7 +479,7 @@ module.exports.loop = function () {
     }
 
     // spawn claimer if flag
-    if(Object.keys(Game.flags).length > 0){
+    if(claimers.length < Object.keys(Game.flags).length){
         var newName = 'L-' + genUUID();
         if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([MOVE, CLAIM, MOVE, MOVE, MOVE, MOVE], newName,
             { memory: { role: 'claimer' } }))) {
