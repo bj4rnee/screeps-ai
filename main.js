@@ -15,6 +15,7 @@ var roleAttacker = require('role.attacker');
 var roleSplitter = require('role.splitter');
 var roleExtractor = require('role.extractor');
 var roleLabtech = require('role.labtech');
+var roleClaimer = require('role.claimer');
 
 // misc imports
 var utils = require('utils');
