@@ -20,6 +20,7 @@ var roleClaimer = {
                 if (creep.claimController(creep.room.controller) === ERR_NOT_IN_RANGE) {
                     creep.moveTo(creep.room.controller, { visualizePathStyle: { stroke: '#cc00cc' } });
                 }
+            } else {
                 // If the claim was successful, remove the flag
                 if (creep.room.controller && creep.room.controller.my) {
                     var targetFlag = Game.flags[creep.memory.targetFlag];
@@ -28,7 +29,7 @@ var roleClaimer = {
                         delete creep.memory.targetFlag; // Remove the flag from the creep's memory
                     }
                 }
-            } else {
+                
                 // Perform tasks in the target room
                 // Check if the claimer should switch between upgrading and collecting energy
                 if (creep.memory.upgrading && creep.store[RESOURCE_ENERGY] === 0) {
