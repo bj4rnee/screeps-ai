@@ -95,7 +95,7 @@ module.exports.loop = function () {
     if (curRoom.energyAvailable < curRoom.energyCapacityAvailable) {
         curRoom.memory.energyfull = false;
     } else { curRoom.memory.energyfull = true; }
-    if (curRoom.storage && curRoom.storage.store[RESOURCE_ENERGY] >= curRoom.storage.store.getCapacity() * 0.75) { tower_repair_walls = false; } else { tower_repair_walls = false; }
+    if (curRoom.storage && curRoom.storage.store[RESOURCE_ENERGY] >= curRoom.storage.store.getCapacity() * 0.75) { tower_repair_walls = true; } else { tower_repair_walls = false; }
     // -------------------------------------
 
     // -------------------------------------
@@ -185,7 +185,7 @@ module.exports.loop = function () {
     // -------------------------------------
     if (curRoom.terminal && (Game.time % 20 == 0)) {
         if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[curRoom.memory.mineralType] > 1000) {
-            var available_mineral = Math.abs(curRoom.terminal.store[curRoom.memory.mineralType]-1000);
+            var available_mineral = Math.abs(curRoom.terminal.store[curRoom.memory.mineralType] - 1000);
             var available_energy = curRoom.terminal.store[RESOURCE_ENERGY];
             var orders = Game.market.getAllOrders(order => order.resourceType == curRoom.memory.mineralType &&
                 order.type == ORDER_BUY &&
@@ -479,14 +479,18 @@ module.exports.loop = function () {
     }
 
     // spawn claimer if flag
-    if(claimers.length < Object.keys(Game.flags).length){
+    if (claimers.length < Object.keys(Game.flags).length) {
         var newName = 'L-' + genUUID();
-        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([MOVE, CLAIM, MOVE, MOVE, MOVE, MOVE], newName,
+        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(Game.spawns['spawn0'].spawnCreep([MOVE, CLAIM, MOVE, MOVE, MOVE, MOVE, CARRY, WORK], newName,
             { memory: { role: 'claimer' } }))) {
             console.log('Spawning new claimer: ' + newName);
         }
     }
 
+    // -------------------------------------
+    // room claiming
+    // -------------------------------------
+    
 
     if (Game.spawns['spawn0'].spawning) {
         var spawningCreep = Game.creeps[Game.spawns['spawn0'].spawning.name];
@@ -602,7 +606,7 @@ module.exports.loop = function () {
     }
 
     // controller decay failsave
-    if (curRoom.controller.my && curRoom.controller.ticksToDowngrade <= 250){
+    if (curRoom.controller.my && curRoom.controller.ticksToDowngrade <= 250) {
         console.log("[INFO] controller decaying in room " + curRoom.name);
         Game.notify("[INFO] controller decaying in room " + curRoom.name);
         // prio queue a creep to handle controller
@@ -654,12 +658,12 @@ module.exports.loop = function () {
     if (Game.time % 100 === 0) {
         const memorySize = JSON.stringify(Memory).length;
         if (memorySize > 1000000) {
-          console.log('Memory approaching dangerous levels: ', memorySize);
-          console.log(
-            Object.keys(Memory)
-              .map(k => `Memory.${k}: ${JSON.stringify(Memory[k]).length}`)
-              .join('\n')
-          );
+            console.log('Memory approaching dangerous levels: ', memorySize);
+            console.log(
+                Object.keys(Memory)
+                    .map(k => `Memory.${k}: ${JSON.stringify(Memory[k]).length}`)
+                    .join('\n')
+            );
         }
-      }
+    }
 }

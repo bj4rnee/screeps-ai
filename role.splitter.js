@@ -19,7 +19,7 @@ var roleSplitter = {
 
             var storage = [...creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType == STRUCTURE_STORAGE })];
 
-            var dropPoints = [...creep.room.find(FIND_DROPPED_RESOURCES, { filter: (r) => r.resourceType == RESOURCE_ENERGY })];
+            var dropPoints = [...creep.room.find(FIND_DROPPED_RESOURCES, { filter: (r) => r.resourceType == RESOURCE_ENERGY && r.amount >= 100})];
             var closest_DPoint = creep.pos.findClosestByRange(dropPoints);
 
             // if theres dropped energy near source (carriers died)
