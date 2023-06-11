@@ -93,7 +93,7 @@ var roleCarrier = {
                 var terminal = creep.room.terminal;
 
                 if (creep.memory.mineralType || Object.keys(creep.store).some(item => BASE_MINERALS.includes(item))) {
-                    if (creep.store[RESOURCE_ENERGY] > 0) {
+                    if (creep.store[RESOURCE_ENERGY] > 0 && storage) {
                         if (creep.transfer(storage[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                             creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
                         }
@@ -103,14 +103,14 @@ var roleCarrier = {
                         if (creep.transfer(terminal, type) == ERR_NOT_IN_RANGE && terminal.store.getFreeCapacity(type) > 0) {
                             creep.moveTo(terminal, { visualizePathStyle: { stroke: '#ffffff' } });
                         } else {
-                            if (creep.transfer(storage[0], type) == ERR_NOT_IN_RANGE) {
+                            if (storage && creep.transfer(storage[0], type) == ERR_NOT_IN_RANGE) {
                                 creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
                             }
                         }
                     }
                 } else {
 
-                    if (_.filter(Game.creeps, (creep) => creep.memory.role == 'splitter').length > 0 && storage[0].store.getFreeCapacity() > 0) {
+                    if (_.filter(Game.creeps, (creep) => creep.memory.role == 'splitter').length > 0 && storage && storage[0].store.getFreeCapacity() > 0) { // check if storage even exists
                         if (creep.transfer(storage[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                             creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
                         }
