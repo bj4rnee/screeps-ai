@@ -89,7 +89,7 @@ var roleCarrier = {
             else {
 
                 // important: if theres splitters, we just need to fill the central storage
-                var storage = [...creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType == STRUCTURE_STORAGE })];
+                var storage = [...creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType == STRUCTURE_STORAGE && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 })];
                 var terminal = creep.room.terminal;
 
                 if (creep.memory.mineralType || Object.keys(creep.store).some(item => BASE_MINERALS.includes(item))) {

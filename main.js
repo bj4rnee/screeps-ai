@@ -490,6 +490,8 @@ module.exports.loop = function () {
     // -------------------------------------
     // room claiming
     // -------------------------------------
+    // new room needs 1 harvester and 1 builder
+    
     
 
     if (Game.spawns['spawn0'].spawning) {
