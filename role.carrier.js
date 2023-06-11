@@ -89,11 +89,11 @@ var roleCarrier = {
             else {
 
                 // important: if theres splitters, we just need to fill the central storage
-                var storage = [...creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType == STRUCTURE_STORAGE && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 })];
+                var storage = [...creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType == STRUCTURE_STORAGE })];
                 var terminal = creep.room.terminal;
 
                 if (creep.memory.mineralType || Object.keys(creep.store).some(item => BASE_MINERALS.includes(item))) {
-                    if (creep.store[RESOURCE_ENERGY] > 0 && storage) {
+                    if (creep.store[RESOURCE_ENERGY] > 0 && storage[0].store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
                         if (creep.transfer(storage[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                             creep.moveTo(storage[0], { visualizePathStyle: { stroke: '#ffffff' } });
                         }
