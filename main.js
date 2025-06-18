@@ -193,12 +193,14 @@ module.exports.loop = function () {
                 // INFO this only consideres orders where max amount can be dealt
                 Game.market.calcTransactionCost(Math.min(available_mineral, order.remainingAmount), curRoom.name, order.roomName) <= available_energy);
             console.log("'" + curRoom.memory.mineralType + "'" + ' buy orders found: ' + orders.length);
-            orders.sort(function (a, b) { return b.price - a.price; });
-            console.log('Best price: ' + orders[0].price);
-            if (orders[0].price >= market_prices[orders[0].resourceType]) {
-                var result = Game.market.deal(orders[0].id, Math.min(available_mineral, orders[0].remainingAmount), curRoom.name);
-                if (result == 0) {
-                    console.log('Order completed successfully');
+            if (orders.length > 0) {
+                orders.sort(function (a, b) { return b.price - a.price; });
+                console.log('Best price: ' + orders[0].price);
+                if (orders[0].price >= market_prices[orders[0].resourceType]) {
+                    var result = Game.market.deal(orders[0].id, Math.min(available_mineral, orders[0].remainingAmount), curRoom.name);
+                    if (result == 0) {
+                        console.log('Order completed successfully');
+                    }
                 }
             }
         }
@@ -491,8 +493,8 @@ module.exports.loop = function () {
     // room claiming
     // -------------------------------------
     // new room needs 1 harvester and 1 builder
-    
-    
+
+
 
     if (Game.spawns['spawn0'].spawning) {
         var spawningCreep = Game.creeps[Game.spawns['spawn0'].spawning.name];
