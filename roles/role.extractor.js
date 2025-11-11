@@ -34,17 +34,6 @@ var roleExtractor = {
                 creep.moveTo(closest_container_by_source, { visualizePathStyle: { stroke: '#ffaa00' } });
             }
         }
-        // else {
-        //     if (creep.room.terminal) {
-        //         if (creep.transfer(creep.room.terminal, creep.memory.mineralType) == ERR_NOT_IN_RANGE) {
-        //             creep.moveTo(creep.room.terminal);
-        //         }
-        //     } else if (creep.room.storage) {
-        //         if (creep.transfer(creep.room.storage, creep.memory.mineralType) == ERR_NOT_IN_RANGE) {
-        //             creep.moveTo(creep.room.storage);
-        //         }
-        //     }
-        // }
     }
 };
 
