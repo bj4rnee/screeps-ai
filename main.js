@@ -6,7 +6,6 @@ const roles = require('roles');
 const { manageStage } = require('manager.stage');
 const { genUUID, manageSpawns } = require('manager.spawn');
 
-var tower_repair_walls = true;
 var wall_max_hp = 20000000;
 var rampart_max_hp = 10000000;
 // market situation for shard 3
@@ -117,7 +116,7 @@ module.exports.loop = function () {
                             tower.repair(closestDamagedStructure_nowall);
                         }
                         else { // no repairable non-wall structure -> repair walls too if allowed
-                            if (tower_repair_walls) {
+                            if (curRoom.memory.tower_repair_walls) {
                                 var damagedStructure = _.filter(tower.room.find(FIND_STRUCTURES), (s) => (s.hits < s.hitsMax) && (s.structureType == STRUCTURE_WALL ? (s.hits <= wall_max_hp) : true) && (s.structureType == STRUCTURE_RAMPART ? (s.hits <= rampart_max_hp) : true)).sort(function (a, b) { return +a.hits - +b.hits });
                                 if (damagedStructure) {
                                     tower.repair(damagedStructure[0]);
