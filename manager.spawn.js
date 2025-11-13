@@ -54,15 +54,8 @@ function nextUnassignedSource(room, role, sources) {
 function nextUnassignedContainer(room, role, containers) {
     if (!containers || containers.length === 0) return null;
 
-    const creeps = _.filter(Game.creeps, c =>
-        c.memory.role === role &&
-        c.memory.homeRoom === room.name &&
-        !c.memory.targetRoom
-    );
-
-    const queued = (room.memory.spawn_queue || []).filter(
-        e => e.role === role && (!e.memory || !e.memory.targetRoom)
-    );
+    const creeps = _.filter(Game.creeps, c => c.memory.role === role && c.room.name === room.name && !c.memory.targetRoom);
+    const queued = room.memory.spawn_queue.filter(e => e.role === role && (!e.memory || !e.memory.targetRoom));
 
     for (let container of containers) {
         const assignedLive = creeps.some(c => c.memory.containerID === container.id);
@@ -198,8 +191,8 @@ function manageSpawns(room, struct) {
             }
             if (countRole('upgrader') < nu) {
                 const newName = 'U-' + genUUID(room.name);
-                const body = [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY] ? room.memory.link_avail_ug : [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE];
-                queueCreep(room, body, newName, 'upgrader', spawnId = getSpawnIdForRole(room, struct.spawns, 'upgrader'));
+                const body = room.memory.link_avail_ug ? [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY] : [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE];
+                queueCreep(room, body, newName, 'upgrader', {}, getSpawnIdForRole(room, struct.spawns, 'upgrader'));
             }
             if (countRole('defender') < nd) {
                 const newName = 'D-' + genUUID(room.name);
@@ -209,10 +202,10 @@ function manageSpawns(room, struct) {
             if (countRole('carrier') < struct.e_sources.length) {
                 const newName = 'C-' + genUUID(room.name);
                 const body = [MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY];
-                const memory = { conatinerID: nextUnassignedContainer(room, 'carrier', struct.containers_by_source).id || null };
+                const memory = { containerID: nextUnassignedContainer(room, 'carrier', struct.containers_by_source).id || null };
                 queueCreep(room, body, newName, 'carrier', memory);
             }
-            if (countRole('splitter') < struct.e_sources.length) {
+            if (countRole('splitter') < ns) {
                 const newName = 'S-' + genUUID(room.name);
                 const body = [MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY];
                 queueCreep(room, body, newName, 'splitter');
@@ -242,8 +235,8 @@ function manageSpawns(room, struct) {
             }
             if (countRole('upgrader') < nu) {
                 const newName = 'U-' + genUUID(room.name);
-                const body = [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY] ? room.memory.link_avail_ug : [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE];
-                queueCreep(room, body, newName, 'upgrader', spawnId = getSpawnIdForRole(room, struct.spawns, 'upgrader'));
+                const body = room.memory.link_avail_ug ? [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY] : [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE];
+                queueCreep(room, body, newName, 'upgrader', {}, getSpawnIdForRole(room, struct.spawns, 'upgrader'));
             }
             if (countRole('defender') < nd) {
                 const newName = 'D-' + genUUID(room.name);
@@ -265,7 +258,7 @@ function manageSpawns(room, struct) {
                 const newName = 'E-' + genUUID(room.name);
                 const body = [WORK, WORK, WORK, WORK, WORK, MOVE, MOVE];
                 const memory = { depositID: nextUnassignedSource(room, 'extractor', struct.m_sources).id || null };
-                queueCreep(room, body, newName, 'extractor', memory, spawnId = getSpawnIdForRole(room, struct.spawns, 'extractor', struct.m_sources));
+                queueCreep(room, body, newName, 'extractor', memory, {}, getSpawnIdForRole(room, struct.spawns, 'extractor', struct.m_sources));
             }
             break;
         case 5:
@@ -314,7 +307,7 @@ function manageSpawns(room, struct) {
             posY,
             {
                 align: 'left',
-                opacity: 0.9,
+                opacity: 1.0,
                 color: '#ffffff',
                 font: '0.8 monospace'
             }
@@ -327,7 +320,7 @@ function manageSpawns(room, struct) {
             posY + 0.6,
             {
                 align: 'left',
-                opacity: 0.7,
+                opacity: 1.0,
                 color: '#999999',
                 font: '0.7 monospace'
             }
@@ -339,13 +332,13 @@ function manageSpawns(room, struct) {
         spawn.room.visual.line(
             { x: posX, y: barY },
             { x: posX + filledWidth, y: barY },
-            { color, width: 0.15, opacity: 0.9 }
+            { color, width: 0.15, opacity: 1.0 }
         );
 
         spawn.room.visual.line(
             { x: posX + filledWidth, y: barY },
             { x: posX + barWidth, y: barY },
-            { color: '#333333', width: 0.15, opacity: 0.3, lineStyle: 'dotted' }
+            { color: '#333333', width: 0.15, opacity: 0.7, lineStyle: 'dotted' }
         );
 
         spawn.room.visual.text(
@@ -354,7 +347,7 @@ function manageSpawns(room, struct) {
             barY + 0.05,
             {
                 align: 'left',
-                opacity: 0.9,
+                opacity: 1.0,
                 color,
                 font: '0.7 monospace'
             }
