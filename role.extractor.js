@@ -14,12 +14,12 @@ var roleExtractor = {
         if (creep.memory.extracting) {
             var target;
 
-            if (creep.memory.depositId) {
-                target = Game.getObjectById(creep.memory.depositId);
+            if (creep.memory.depositID) {
+                target = Game.getObjectById(creep.memory.depositID);
             } else {
                 var targets = creep.room.find(FIND_MINERALS);
                 target = targets[0];
-                creep.memory.depositId = target.id;
+                creep.memory.depositID = target.id;
                 creep.memory.mineralType = target.mineralType;
             }
             var closest_container_by_source = target.pos.findClosestByRange(creep.room.find(FIND_STRUCTURES, { filter: (structure) => { return (structure.structureType == STRUCTURE_CONTAINER); } }));

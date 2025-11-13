@@ -1,37 +1,16 @@
-// TODO gamestaging with screeb production control
+// WIP gamestaging with screep production control
 // TODO invader failsave
 // TODO room controller decay failsave
 
-// role imports
 const roles = require('roles');
-
-// misc imports
-var queue = require('utils.creep-queue');
+const { manageStage } = require('manager.stage');
+const { genUUID, manageSpawns } = require('manager.spawn');
 
 var tower_repair_walls = true;
 var wall_max_hp = 20000000;
 var rampart_max_hp = 10000000;
 // market situation for shard 3
 var market_prices = { "U": 70, "L": 15.4, "Z": 20.0, "H": 200, "O": 5.5, "K": 2.0, "X": 3.9, "energy": 18 };
-
-
-// MIT spec
-function genUUID(roomName) {
-    var d = new Date().getTime(); // Timestamp
-    var d2 = 0;
-    // replace 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx' for RFC4122 v4 UUID
-    return roomName + '-xxxxxxxx'.replace(/[xy]/g, function (c) {
-        var r = Math.random() * 16; // random number between 0 and 16
-        if (d > 0) { // Use timestamp until depleted
-            r = (d + r) % 16 | 0;
-            d = Math.floor(d / 16);
-        } else { // Use microseconds since page-load if supported
-            r = (d2 + r) % 16 | 0;
-            d2 = Math.floor(d2 / 16);
-        }
-        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    });
-}
 
 // main game loop function
 module.exports.loop = function () {
@@ -57,73 +36,61 @@ module.exports.loop = function () {
     for (let roomName in Game.rooms) {
         const curRoom = Game.rooms[roomName];
 
-        // skip rooms you don't own (e.g., observer or neutral rooms)
+        // skip rooms i don't own (e.g. observer or neutral rooms)
         if (!curRoom.controller || !curRoom.controller.my) continue;
 
         const spawn_list = curRoom.find(FIND_MY_SPAWNS);
         if (spawn_list.length < 1) continue;
         const main_spawn = spawn_list[0];
-        // store main spawn id in memory for creeps to reference later
-        Memory.rooms[curRoom.name].mainSpawnId = main_spawn.id;
+        curRoom.memory.mainSpawnId = main_spawn.id;
 
-        var containers = curRoom.find(FIND_STRUCTURES, {
+        // find other structures (call only once per tick)
+        const containers = curRoom.find(FIND_STRUCTURES, {
             filter: (structure) => {
                 return (structure.structureType == STRUCTURE_CONTAINER);
             }
         });
-        var e_sources = curRoom.find(FIND_SOURCES); // energy sources
-        var m_sources = curRoom.find(FIND_MINERALS, { filter: (m) => { return (m.mineralAmount > 0); } }); // active mineral sources
-        if (!curRoom.memory.mineralType) {
-            if (curRoom.find(FIND_MINERALS).length >= 1) {
-                curRoom.memory.mineralType = curRoom.find(FIND_MINERALS)[0].mineralType;
-            } else { curRoom.memory.mineralType = "none"; }
-        }
 
-        // if a link system is available for upgraders to use (contr lvl 5+ only)
-        var links = curRoom.find(FIND_STRUCTURES, { filter: (structure) => { return (structure.structureType == STRUCTURE_LINK); } });
-        curRoom.memory.link_avail_ug = (links.length >= 2) ? true : false;
+        const e_sources = curRoom.find(FIND_SOURCES); // energy sources
+        const m_sources = curRoom.find(FIND_MINERALS, { filter: (m) => { return (m.mineralAmount > 0); } }); // active mineral sources
 
-        var constructionSites = curRoom.find(FIND_CONSTRUCTION_SITES);
-        if (curRoom.find(FIND_HOSTILE_CREEPS).length > 0) {
-            curRoom.memory.attacked = true;
-        }
-        else { curRoom.memory.attacked = false; }
-        if (curRoom.energyAvailable < (curRoom.energyCapacityAvailable - ((spawn_list.length - 1) * 300))) {
-            curRoom.memory.energyfull = false;
-        } else { curRoom.memory.energyfull = true; }
-        if (curRoom.storage && curRoom.storage.store[RESOURCE_ENERGY] >= curRoom.storage.store.getCapacity() * 0.75) { tower_repair_walls = false; } else { tower_repair_walls = false; }
-        // -------------------------------------
+        const containers_by_source = curRoom.find(FIND_STRUCTURES, {
+            filter: (structure) => {
+                if (structure.structureType !== STRUCTURE_CONTAINER) return false;
+                return e_sources.some(source => structure.pos.inRangeTo(source.pos, 1));
+            }
+        });
 
-        // -------------------------------------
-        // Assign stage based on controllerLevel
-        // -------------------------------------
-        let controllerLevel = curRoom.controller.level;
-        // level 0-2
-        if (controllerLevel < 3) {
-            curRoom.memory.stage = 1;
-        }
-        // level 3
-        if (controllerLevel == 3) {
-            curRoom.memory.stage = 2;
-        }
-        // level 4-5
-        if (controllerLevel > 3 && controllerLevel < 6) {
-            curRoom.memory.stage = 3;
-        }
-        // level 6-7
-        if (controllerLevel > 5 && controllerLevel < 8) {
-            curRoom.memory.stage = 4;
-        }
-        // level 7+
-        if (controllerLevel > 7) {
-            curRoom.memory.stage = 4; // stage 5 is currently unused
-        }
-        // -------------------------------------
-
-        //tower logic
-        var rhash = curRoom.toString().substring(5).slice(0, -1);
+        var construction_sites = curRoom.find(FIND_CONSTRUCTION_SITES);
         var towers = curRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } });
+        var links = curRoom.find(FIND_STRUCTURES, { filter: (structure) => { return (structure.structureType == STRUCTURE_LINK); } });
+        var factory = curRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_FACTORY } })[0];
+        var extractor = curRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_EXTRACTOR } })[0];
+        var nuker = curRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0];
 
+        const all_structures = {
+            spawns: spawn_list,
+            main_spawn: main_spawn,
+            containers: containers,
+            e_sources: e_sources,
+            m_sources: m_sources,
+            containers_by_source: containers_by_source,
+            construction_sites: construction_sites,
+            towers: towers,
+            terminal: curRoom.terminal,
+            storage: curRoom.storage,
+            controller: curRoom.controller,
+            links: links,
+            extractor: extractor,
+            factory: factory,
+            nuker: nuker
+
+        };
+
+
+        // -------------------------------------
+        // tower logic
+        // -------------------------------------
         for (var id in towers) {
             var tower = towers[id];
             if (tower) {
@@ -215,290 +182,9 @@ module.exports.loop = function () {
                 }
             }
         }
-        // -------------------------------------
 
-        const roomCreeps = _.filter(Game.creeps, c => c.room.name == curRoom.name);
-
-        //array of harvesters
-        var harvesters = _.filter(roomCreeps, (creep) => creep.memory.role == 'harvester');
-        var builders = _.filter(roomCreeps, (creep) => creep.memory.role == 'builder');
-        var upgraders = _.filter(roomCreeps, (creep) => creep.memory.role == 'upgrader');
-        var defenders = _.filter(roomCreeps, (creep) => creep.memory.role == 'defender');
-        var carriers = _.filter(roomCreeps, (creep) => creep.memory.role == 'carrier');
-        var attackers = _.filter(roomCreeps, (creep) => creep.memory.role == 'attacker');
-        var labtechs = _.filter(roomCreeps, (creep) => creep.memory.role == 'labtech');
-        var splitters = _.filter(roomCreeps, (creep) => creep.memory.role == 'splitter');
-        var extractors = _.filter(roomCreeps, (creep) => creep.memory.role == 'extractor');
-        var claimers = _.filter(roomCreeps, (creep) => creep.memory.role == 'claimer');
-
-        // -------------------------------------
-        // implemented a little safeguard here, if room has less than 2 creeps it is considered to be in danger
-        // therefore we need to bootstrap it with stage 1
-        // -------------------------------------
-        if (roomCreeps.length < 2) {
-            curRoom.memory.stage = 1;
-        }
-
-        // -------------------------------------
-        // creep manager
-        // auto spawn logic
-        // -------------------------------------
-        switch (curRoom.memory.stage) {
-            // level 0-2
-            // spawn order at beginning: harvester, carrier, harvester, carrier, ..., upgrader, builder
-            case 1:
-                if (curRoom.find(FIND_MY_CREEPS).length < 1) {
-                    curRoom.memory.init = true;
-                } else {
-                    curRoom.memory.init = undefined;
-                }
-                if (curRoom.memory.init) {
-                    var newName = 'H-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, WORK, MOVE], newName,
-                        { memory: { role: 'harvester' } }))) {
-                        console.log('Spawning new harvester: ' + newName);
-                    }
-                }
-                else {
-                    if (harvesters.length < e_sources.length) {
-                        var newName = 'H-' + genUUID(curRoom.name);
-                        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, WORK, MOVE], newName,
-                            { memory: { role: 'harvester' } }))) {
-                            console.log('Spawning new harvester: ' + newName);
-                        }
-                    }
-                    if (builders.length < 2) { //4
-                        var newName = 'B-' + genUUID(curRoom.name);
-                        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, CARRY, CARRY, MOVE, MOVE], newName,
-                            { memory: { role: 'builder' } }))) {
-                            console.log('Spawning new builder: ' + newName);
-                        }
-                    }
-                    if (upgraders.length < 1) { //3
-                        var newName = 'U-' + genUUID(curRoom.name);
-                        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, CARRY, MOVE, MOVE, CARRY], newName,
-                            { memory: { role: 'upgrader' } }))) {
-                            console.log('Spawning new upgrader: ' + newName);
-                        }
-                    }
-                    if (carriers.length < 2) {//containers.length
-                        var newName = 'C-' + genUUID(curRoom.name);
-                        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([MOVE, MOVE, CARRY, CARRY], newName,
-                            { memory: { role: 'carrier' } }))) {
-                            console.log('Spawning new carrier: ' + newName);
-                        }
-                    }
-                    if (defenders.length < 0) { //1
-                        var newName = 'D-' + genUUID(curRoom.name);
-                        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([TOUGH, ATTACK, ATTACK, ATTACK, MOVE], newName,
-                            { memory: { role: 'defender' } }))) {
-                            console.log('Spawning new defender: ' + newName);
-                        }
-                    }
-                }
-                break;
-            // level 3
-            case 2:
-                if (curRoom.memory.energyfull) {
-                    var nb = 1;
-                    var nu = 2;
-                    var nd = 0;
-                } else {// energy save mode -> prioritise harvesters and carriers
-                    var nb = 1;
-                    var nu = 1;
-                    var nd = 0;
-                }
-                if (curRoom.memory.attacked) { nd = 0; nu = 1; nb = 0; }
-                if (harvesters.length < e_sources.length) { //e_sources.length
-                    var newName = 'H-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, WORK, WORK, WORK, WORK, MOVE], newName,
-                        { memory: { role: 'harvester' } }))) {
-                        console.log('Spawning new harvester: ' + newName);
-                    }
-                }
-                if (constructionSites.length <= 0) {
-                    // we dont need builders
-                } else {
-                    if (builders.length < nb) { //3
-                        var newName = 'B-' + genUUID(curRoom.name);
-                        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, WORK, CARRY, CARRY, MOVE, MOVE], newName,
-                            { memory: { role: 'builder' } }))) {
-                            console.log('Spawning new builder: ' + newName);
-                        }
-                    }
-                }
-                if (upgraders.length < nu) { //7
-                    var newName = 'U-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE], newName,
-                        { memory: { role: 'upgrader' } }))) {
-                        console.log('Spawning new upgrader: ' + newName);
-                    }
-                }
-                if (defenders.length < nd) { //1
-                    var newName = 'D-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([TOUGH, TOUGH, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, MOVE], newName,
-                        { memory: { role: 'defender' } }))) {
-                        console.log('Spawning new defender: ' + newName);
-                    }
-                }
-                if (carriers.length < containers.length) {//containers.length
-                    var newName = 'C-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([MOVE, MOVE, MOVE, CARRY, CARRY, CARRY], newName,
-                        { memory: { role: 'carrier' } }))) {
-                        console.log('Spawning new carrier: ' + newName);
-                    }
-                }
-                break;
-            // level 4-5
-            case 3:
-                if (curRoom.memory.energyfull) {
-                    var nb = 1; // 2-3
-                    var nu = 3; // 4-5 are normal
-                    var nd = 0;
-                    var ns = 1;
-                } else {// energy save mode -> prioritise harvesters and carriers
-                    var nb = 0;
-                    var nu = 1;
-                    var nd = 0;
-                    var ns = 1;
-                }
-                if (curRoom.memory.link_avail_ug) { nu = 1; }
-                if (curRoom.memory.attacked) { nd = 1; nu = 1; nb = 0; }
-                if (harvesters.length < e_sources.length) { //e_sources.length
-                    var newName = 'H-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, WORK, WORK, WORK, WORK, MOVE, MOVE], newName,
-                        { memory: { role: 'harvester' } }))) {
-                        console.log('Spawning new harvester: ' + newName);
-                    }
-                }
-                if (constructionSites.length <= 0) {
-                    // we dont need builders
-                } else {
-                    if (builders.length < nb) {
-                        var newName = 'B-' + genUUID(curRoom.name);
-                        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE], newName,
-                            { memory: { role: 'builder' } }))) {
-                            console.log('Spawning new builder: ' + newName);
-                        }
-                    }
-                }
-                if (upgraders.length < nu) { //
-                    var newName = 'U-' + genUUID(curRoom.name);
-                    if (curRoom.memory.link_avail_ug) {
-                        var u_body = [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY];
-                    }
-                    else {
-                        var u_body = [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE];
-                    }
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep(u_body, newName,
-                        { memory: { role: 'upgrader' } }))) {
-                        console.log('Spawning new upgrader: ' + newName);
-                    }
-                }
-                if (defenders.length < nd) { //1
-                    var newName = 'D-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([TOUGH, TOUGH, ATTACK, ATTACK, ATTACK, ATTACK, MOVE, MOVE, MOVE], newName,
-                        { memory: { role: 'defender' } }))) {
-                        console.log('Spawning new defender: ' + newName);
-                    }
-                }
-                if (carriers.length < containers.length) {//containers.length
-                    var newName = 'C-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY], newName,
-                        { memory: { role: 'carrier' } }))) {
-                        console.log('Spawning new carrier: ' + newName);
-                    }
-                }
-                if (splitters.length < ns) { //1
-                    var newName = 'S-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY], newName,
-                        { memory: { role: 'splitter' } }))) {
-                        console.log('Spawning new splitter: ' + newName);
-                    }
-                }
-                break;
-            // level 6-7
-            case 4:
-                if (curRoom.memory.energyfull) {
-                    var nb = 1; // 2-3
-                    var nu = 3; // 
-                    var nd = 0;
-                    var ns = 1;
-                } else {// energy save mode -> prioritise harvesters and carriers
-                    var nb = 0;
-                    var nu = 1;
-                    var nd = 0;
-                    var ns = 1;
-                }
-                if (curRoom.memory.link_avail_ug) { nu = 1; }
-                if (curRoom.memory.attacked) { nd = 1; nu = 1; nb = 0; }
-                if (harvesters.length < e_sources.length) { //e_sources.length
-                    var newName = 'H-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, WORK, WORK, WORK, WORK, MOVE, MOVE], newName,
-                        { memory: { role: 'harvester' } }))) {
-                        console.log('Spawning new harvester: ' + newName);
-                    }
-                }
-                if (constructionSites.length <= 0) {
-                    // we dont need builders
-                } else {
-                    if (builders.length < nb) {
-                        var newName = 'B-' + genUUID(curRoom.name);
-                        if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE], newName,
-                            { memory: { role: 'builder' } }))) {
-                            console.log('Spawning new builder: ' + newName);
-                        }
-                    }
-                }
-                if (upgraders.length < nu) { //
-                    var newName = 'U-' + genUUID(curRoom.name);
-                    if (curRoom.memory.link_avail_ug) {
-                        var u_body = [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY];
-                    }
-                    else {
-                        var u_body = [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE];
-                    }
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep(u_body, newName,
-                        { memory: { role: 'upgrader' } }))) {
-                        console.log('Spawning new upgrader: ' + newName);
-                    }
-                }
-                if (defenders.length < nd) { //1
-                    var newName = 'D-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([TOUGH, TOUGH, ATTACK, ATTACK, ATTACK, ATTACK, MOVE, MOVE, MOVE], newName,
-                        { memory: { role: 'defender' } }))) {
-                        console.log('Spawning new defender: ' + newName);
-                    }
-                }
-                if (carriers.length < e_sources.length + m_sources.length) { // every e_source + dedicated mineral carrier
-                    var newName = 'C-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY], newName,
-                        { memory: { role: 'carrier' } }))) {
-                        console.log('Spawning new carrier: ' + newName);
-                    }
-                }
-                if (splitters.length < ns) { //1
-                    var newName = 'S-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY], newName,
-                        { memory: { role: 'splitter' } }))) {
-                        console.log('Spawning new splitter: ' + newName);
-                    }
-                }
-                if (extractors.length < m_sources.length) {
-                    var newName = 'E-' + genUUID(curRoom.name);
-                    if (![ERR_BUSY, ERR_NOT_ENOUGH_ENERGY].includes(main_spawn.spawnCreep([WORK, WORK, WORK, WORK, WORK, MOVE, MOVE], newName,
-                        { memory: { role: 'extractor' } }))) {
-                        console.log('Spawning new extractor: ' + newName);
-                    }
-                }
-                break;
-            // level 7+
-            case 5:
-                break;
-            default:
-                console.log("[ERROR] could not detect game's stage");
-                break;
-        }
+        manageStage(curRoom, all_structures);
+        manageSpawns(curRoom, all_structures);
 
         // -------------------------------------
         // claim flags: spawn claimer
@@ -732,88 +418,6 @@ module.exports.loop = function () {
                         Memory.lastScoutSpawn = Game.time;
                         console.log(`Dispatching scout ${newName} from ${curRoom.name} to ${flag.pos.roomName}`);
                         break; // only send one per interval
-                    }
-                }
-            }
-        }
-
-        if (main_spawn.spawning) {
-            var spawningCreep = Game.creeps[main_spawn.spawning.name];
-            main_spawn.room.visual.text(
-                '♻️️️' + spawningCreep.memory.role,
-                main_spawn.pos.x + 1,
-                main_spawn.pos.y,
-                { align: 'left', opacity: 0.8 });
-        }
-
-        // assign 1 harvestes to every source
-        for (var s = 0; s < e_sources.length; s++) {
-            var assigned = false;
-            for (var h = 0; h < harvesters.length; h++) { if (harvesters[h].memory.sourceID == e_sources[s].id) { assigned = true; } }
-            //console.log('source ' + e_sources[s].id + ' ' + assigned)
-            if (!assigned) {
-                for (var a = 0; a < harvesters.length; a++) {
-                    if (harvesters[a].memory.sourceID == undefined) {
-                        var harv = harvesters[a];
-                        harv.memory.sourceID = e_sources[s].id;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // assign carriers accordingly to containers (above stage 2)
-        if (curRoom.memory.stage < 2) {
-            for (var s = 0; s < e_sources.length; s++) {
-                var assigned = false;
-                for (var h = 0; h < carriers.length; h++) { if (carriers[h].memory.sourceID == e_sources[s].id) { assigned = true; } }
-                //console.log('source ' + e_sources[s].id + ' ' + assigned)
-                if (!assigned) {
-                    for (var a = 0; a < carriers.length; a++) { if (carriers[a].memory.sourceID == undefined) { var carr = carriers[a]; carr.memory.sourceID = e_sources[s].id; break; } }
-                }
-            }
-        } else {
-            for (var c = 0; c < containers.length; c++) {
-                if (containers.length < carriers.length) {
-                    // now theres more carriers than containers so we need to assign multiple
-                    var assigned_n = 0;
-                    for (var a = 0; a < carriers.length; a++) { if (carriers[a].memory.containerID == containers[c].id) { assigned_n++; } }
-                    //console.log('container ' + containers[c].id + ' has ' + assigned_n+ ' carriers')
-                    if (assigned_n == 0) { //if container is not assigned -> give is first carrier without a job
-                        for (var a = 0; a < carriers.length; a++) {
-                            if (carriers[a].memory.containerID == undefined) {
-                                var carr = carriers[a];
-                                carr.memory.containerID = containers[c].id;
-                                break;
-                            }
-                        }
-                    }
-                    if (assigned_n == 1) { //if container has 1 carr assigned -> give another carrier without a job
-                        for (var a = 0; a < carriers.length; a++) {
-                            if (carriers[a].memory.containerID == undefined) {
-                                var carr = carriers[a];
-                                carr.memory.containerID = containers[c].id;
-                                break;
-                            }
-                        }
-                    }
-                    // NOTE 2 carrs per container is the max rn, because it wouldnt be efficient
-                    if (assigned_n > 2) { //if container has 2 carr assigned -> give no carriers
-                        console.log('[ERROR] unassigned carrier ' + curRoom.name)
-                    }
-                }
-                else {
-                    var assigned = false;
-                    for (var a = 0; a < carriers.length; a++) { if (carriers[a].memory.containerID == containers[c].id) { assigned = true; } }
-                    //console.log('container ' + containers[c].id + ' ' + assigned)
-                    if (!assigned) {
-                        for (var b = 0; b < carriers.length; b++) {
-                            if (carriers[b].memory.containerID == undefined) {
-                                var carr = carriers[b];
-                                carr.memory.containerID = containers[c].id;
-                                break;
-                            }
-                        }
                     }
                 }
             }

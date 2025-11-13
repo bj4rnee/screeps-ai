@@ -1,13 +1,13 @@
 module.exports = {
-    harvester: require('roles.harvester'),
-    upgrader: require('roles.upgrader'),
-    builder: require('roles.builder'),
-    carrier: require('roles.carrier'),
-    claimer: require('roles.claimer'),
-    defender: require('roles.defender'),
-    splitter: require('roles.splitter'),
-    attacker: require('roles.attacker'),
-    extractor: require('roles.extractor'),
-    labtech: require('roles.labtech'),
-    scout: require('roles.scout')
+    harvester: require('role.harvester'),
+    upgrader: require('role.upgrader'),
+    builder: require('role.builder'),
+    carrier: require('role.carrier'),
+    claimer: require('role.claimer'),
+    defender: require('role.defender'),
+    splitter: require('role.splitter'),
+    attacker: require('role.attacker'),
+    extractor: require('role.extractor'),
+    labtech: require('role.labtech'),
+    scout: require('role.scout')
 };
