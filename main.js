@@ -144,13 +144,13 @@ module.exports.loop = function () {
         // -------------------------------------
         // market and terminal trades
         // -------------------------------------
-        if (curRoom.terminal && (Game.time % 20 == 0)) {
+        if (curRoom.terminal && (Game.time % 30 == 0)) {
             // sell mineralType
             if (curRoom.terminal.store[RESOURCE_ENERGY] >= 2000 && curRoom.terminal.store[curRoom.memory.mineralType] > 1000) {
                 var available_mineral = Math.abs(curRoom.terminal.store[curRoom.memory.mineralType] - 1000);
                 var available_energy = curRoom.terminal.store[RESOURCE_ENERGY];
                 var orders = Game.market.getAllOrders(order => order.resourceType == curRoom.memory.mineralType &&
-                    order.type == ORDER_BUY &&
+                    order.type == ORDER_BUY && order.amount >= 5 &&
                     // INFO this only consideres orders where max amount can be dealt
                     Game.market.calcTransactionCost(Math.min(available_mineral, order.remainingAmount), curRoom.name, order.roomName) <= available_energy);
                 console.log("'" + curRoom.memory.mineralType + "'" + ' buy orders found: ' + orders.length);
@@ -168,7 +168,7 @@ module.exports.loop = function () {
                 var available_energy = curRoom.terminal.store[RESOURCE_ENERGY];
                 var sellable_energy = curRoom.terminal.store[RESOURCE_ENERGY] - 10000;
                 var orders = Game.market.getAllOrders(order => order.resourceType == RESOURCE_ENERGY &&
-                    order.type == ORDER_BUY &&
+                    order.type == ORDER_BUY && order.amount >= 20 &&
                     // INFO this only consideres orders where max amount can be dealt
                     Game.market.calcTransactionCost(Math.min(sellable_energy, order.remainingAmount), curRoom.name, order.roomName) <= available_energy);
                 console.log("'" + RESOURCE_ENERGY + "'" + ' buy orders found: ' + orders.length);
