@@ -258,7 +258,7 @@ function manageSpawns(room, struct) {
                 const newName = 'E-' + genUUID(room.name);
                 const body = [WORK, WORK, WORK, WORK, WORK, MOVE, MOVE];
                 const memory = { depositID: nextUnassignedSource(room, 'extractor', struct.m_sources).id || null };
-                queueCreep(room, body, newName, 'extractor', memory, {}, getSpawnIdForRole(room, struct.spawns, 'extractor', struct.m_sources));
+                queueCreep(room, body, newName, 'extractor', memory, getSpawnIdForRole(room, struct.spawns, 'extractor', struct.m_sources));
             }
             break;
         case 5:

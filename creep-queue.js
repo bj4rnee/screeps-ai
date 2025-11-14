@@ -104,11 +104,19 @@ function dequeueCreep(room, dryRun = false, force = false) {
             console.log(`Spawned ${role}: ${name} at ${targetSpawn.name}`);
             spawned[targetSpawn.name] = true;
         } else {
-            if (force) continue; // remove
-            room.memory.spawn_queue.push(entry); // re-queue
-            // if (result !== ERR_NOT_ENOUGH_ENERGY && result !== ERR_BUSY) {
-            //     console.log(`Spawn error for ${name}: ${result}`);
-            // }
+            const shouldRequeue = (
+                result === ERR_NOT_ENOUGH_ENERGY ||
+                result === ERR_BUSY
+            );
+
+            if (shouldRequeue && !force) {
+                room.memory.spawn_queue.push(entry); // re-queue
+            }
+
+            // log error and drop creep
+            if (result !== ERR_NOT_ENOUGH_ENERGY && result !== ERR_BUSY) {
+                console.log(`[ERROR] Unable to spawn ${name} (${role}): ${result}`);
+            }
         }
     }
 
