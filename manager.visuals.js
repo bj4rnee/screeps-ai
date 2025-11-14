@@ -328,10 +328,11 @@ function visualizeCPU(room) {
     }
 
     // labels
-    const currentStr = `${tracking.history[tracking.history.length - 1].cpu.toFixed(1)}`;
-    const avgStr = `Ø${tracking.avg.toFixed(1)}`;
+    const currentStr = `${tracking.history[tracking.history.length - 1].cpu.toFixed(1)}ms`;
+    const avgStr = `Ø${tracking.avg.toFixed(1)}ms`;
+    const cpuBucket = `${Game.cpu.bucket}`;
 
-    visual.text(currentStr, chartX + 1, chartY - 0.3, {
+    visual.text(currentStr, chartX + 0.1, chartY - 0.3, {
         align: 'left',
         opacity: 1.0,
         color: '#ffffff',
@@ -340,7 +341,7 @@ function visualizeCPU(room) {
         font: '0.7 monospace'
     });
 
-    visual.text(avgStr, chartX + 4.5, chartY - 0.3, {
+    visual.text(avgStr, chartX + 4, chartY - 0.3, {
         align: 'center',
         opacity: 1.0,
         color: lineColor,
@@ -351,10 +352,20 @@ function visualizeCPU(room) {
 
     // bucket warning if low (<200)
     if (Game.cpu.bucket < 200) {
-        visual.text('⚠️ Bucket low', chartX + 8.5, chartY - 0.3, {
+        visual.text('⚠️ Bucket low', chartX + 7.5, chartY - 0.3, {
             opacity: 1.0,
             color: '#ff4444',
-            font: '0.9 monospace'
+            stroke: '#000000',
+            strokeWidth: 0.06,
+            font: '0.6 monospace'
+        });
+    } else {
+        visual.text(cpuBucket, chartX + 7.5, chartY - 0.3, {
+            opacity: 1.0,
+            color: '#44beff',
+            stroke: '#000000',
+            strokeWidth: 0.06,
+            font: '0.7 monospace'
         });
     }
 }
