@@ -3,6 +3,7 @@
 // TODO room controller decay failsave
 
 const roles = require('roles');
+const visuals = require('manager.visuals');
 const { manageStage } = require('manager.stage');
 const { genUUID, manageSpawns } = require('manager.spawn');
 
@@ -184,6 +185,7 @@ module.exports.loop = function () {
 
         manageStage(curRoom, all_structures);
         manageSpawns(curRoom, all_structures);
+        visuals.run(curRoom, all_structures);
 
         // -------------------------------------
         // claim flags: spawn claimer
