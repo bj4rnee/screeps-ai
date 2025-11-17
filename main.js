@@ -4,7 +4,7 @@
 
 const roles = require('./roles');
 const visuals = require('./manager.visuals');
-const linkManager = require('./manager.links');
+const linkManager = require('./manager.link');
 const { manageStage } = require('./manager.stage');
 const {
     manageSpawns,
@@ -48,13 +48,14 @@ module.exports.loop = function () {
         // skip rooms i don't own (e.g. observer or neutral rooms)
         if (!curRoom.controller || !curRoom.controller.my) continue;
 
+        if (!curRoom.memory.struct_ids) curRoom.memory.struct_ids = {};
         const ids = curRoom.memory.struct_ids;
 
         const spawn_list = curRoom.find(FIND_MY_SPAWNS);
         if (spawn_list.length < 1) continue;
         const main_spawn = spawn_list[0];
 
-        if (!ids) ids.main_spawn_id = main_spawn.id;
+        if (!ids.main_spawn_id) ids.main_spawn_id = main_spawn.id;
 
         // find other structures (call only once per tick)
         const containers = curRoom.find(FIND_STRUCTURES, {
@@ -254,7 +255,7 @@ module.exports.loop = function () {
                 // skip if this room is the target
                 if (curRoom.name === flag.pos.roomName) continue;
 
-                spawnScout(curRoom, flag.pos.room, flag);
+                spawnScout(curRoom, flag.pos.roomName, flag);
                 Memory.lastScoutSpawn = Game.time;
                 break;
             }
@@ -308,6 +309,8 @@ module.exports.loop = function () {
 }
 
 global.reset_memory = function () {
-    for (const key in Memory) delete Memory[key];
+    for (const key in Memory) {
+        if (key !== 'creeps') delete Memory[key];
+    }
     console.log("[INFO] Memory wiped.");
 };

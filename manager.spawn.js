@@ -385,8 +385,7 @@ function spawnSupporter(room, targetRoom, flag) {
     }
 }
 
-function spawnScout(room, targetRoom, flag) {
-    const targetRoomName = targetRoom.name;
+function spawnScout(room, targetRoomName, flag) {
     // skip if already has a scout assigned
     const existing = _.some(Game.creeps, c =>
         c.memory.role === 'scout' &&
