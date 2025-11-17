@@ -50,44 +50,44 @@ var roleUpgrader = {
             }
             // stage 2 should collect energy from storages or containers OR _link_ if available
             else {
+                //check if link system is present -> use it
+                if (creep.room.memory.link_avail_ug && link_ctrl) {
+                    if (creep.withdraw(link_ctrl, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                        creep.moveTo(link_ctrl, { visualizePathStyle: { stroke: '#ffaa00' } });
+                    }
+                    return;
+                }
 
-                // collect dropped energy while upgrading (upgrader died on controller)
+                // no link system -> go collect energy manually
+                // get dropped energy while upgrading (upgrader died on controller)
                 var dropPoints = [...creep.room.find(FIND_DROPPED_RESOURCES, { filter: (r) => r.resourceType == RESOURCE_ENERGY })];
                 var closest_DPoint = creep.room.controller.pos.findClosestByRange(dropPoints);
-                if (creep.store.getFreeCapacity() > 0 && closest_DPoint && creep.pos.getRangeTo(closest_DPoint) <= 6) {
+                if (creep.store.getFreeCapacity() > 0 && closest_DPoint && creep.pos.getRangeTo(closest_DPoint) <= 3) {
                     if (creep.pickup(closest_DPoint, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(closest_DPoint, { visualizePathStyle: { stroke: '#0095ff' } });
                     }
                 }
+                //if storage is available -> target it. otherwise target containers
                 else {
-                    //check if link system is present -> use it
-                    if (creep.room.memory.link_avail_ug && link_ctrl) {
-                        if (creep.withdraw(link_ctrl, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(link_ctrl, { visualizePathStyle: { stroke: '#ffaa00' } });
-                        }
-                        // no link system -> go collect energy manually
+                    let sources = [];
+
+                    // 1 prefer storage
+                    if (storage && storage.store[RESOURCE_ENERGY] > 0) {
+                        sources.push(storage);
                     } else {
-                        //if storage is available -> target it. otherwise target containers
-                        let sources = [];
-
-                        // 1 prefer storage
-                        if (storage && storage.store[RESOURCE_ENERGY] > 0) {
-                            sources.push(storage);
-                        } else {
-                            // 2 otherwise containers
-                            for (const c of struct.containers) {
-                                if (c.store[RESOURCE_ENERGY] > 0) sources.push(c);
-                            }
+                        // 2 otherwise containers
+                        for (const c of struct.containers) {
+                            if (c.store[RESOURCE_ENERGY] > 0) sources.push(c);
                         }
+                    }
 
-                        if (sources.length === 0) return; // nothing to take
+                    if (sources.length === 0) return; // nothing to take
 
-                        const target = creep.pos.findClosestByRange(sources);
-                        if (!target) return;
+                    const target = creep.pos.findClosestByRange(sources);
+                    if (!target) return;
 
-                        if (creep.withdraw(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                            creep.moveTo(target, { visualizePathStyle: { stroke: '#ffaa00' } });
-                        }
+                    if (creep.withdraw(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                        creep.moveTo(target, { visualizePathStyle: { stroke: '#ffaa00' } });
                     }
                 }
             }
