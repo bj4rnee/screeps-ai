@@ -2,10 +2,17 @@
 // TODO invader failsave
 // TODO room controller decay failsave
 
-const roles = require('roles');
-const visuals = require('manager.visuals');
-const { manageStage } = require('manager.stage');
-const { genUUID, manageSpawns } = require('manager.spawn');
+const roles = require('./roles');
+const visuals = require('./manager.visuals');
+const linkManager = require('./manager.links');
+const { manageStage } = require('./manager.stage');
+const {
+    manageSpawns,
+    spawnClaimer,
+    spawnBootstrap,
+    spawnScout,
+    spawnSupporter
+} = require('./manager.spawn');
 
 var wall_max_hp = 20000000;
 var rampart_max_hp = 10000000;
@@ -33,16 +40,21 @@ module.exports.loop = function () {
     // -------------------------------------
     // Handle all owned rooms dynamically
     // -------------------------------------
+    var all_structures_in_room = {};
+
     for (let roomName in Game.rooms) {
         const curRoom = Game.rooms[roomName];
 
         // skip rooms i don't own (e.g. observer or neutral rooms)
         if (!curRoom.controller || !curRoom.controller.my) continue;
 
+        const ids = curRoom.memory.struct_ids;
+
         const spawn_list = curRoom.find(FIND_MY_SPAWNS);
         if (spawn_list.length < 1) continue;
         const main_spawn = spawn_list[0];
-        curRoom.memory.mainSpawnId = main_spawn.id;
+
+        if (!ids) ids.main_spawn_id = main_spawn.id;
 
         // find other structures (call only once per tick)
         const containers = curRoom.find(FIND_STRUCTURES, {
@@ -68,6 +80,16 @@ module.exports.loop = function () {
         var extractor = curRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_EXTRACTOR } })[0];
         var nuker = curRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0];
 
+        const links_by_source = _.filter(links, link =>
+            _.some(e_sources, source => link.pos.inRangeTo(source, 2))
+        );
+
+        var damaged_structures = _.filter(curRoom.find(FIND_STRUCTURES), (s) =>
+            (s.hits < s.hitsMax) &&
+            (s.structureType == STRUCTURE_WALL ? (s.hits <= wall_max_hp) : true) &&
+            (s.structureType == STRUCTURE_RAMPART ? (s.hits <= rampart_max_hp) : true))
+            .sort(function (a, b) { return +a.hits - +b.hits });
+
         const all_structures = {
             spawns: spawn_list,
             main_spawn: main_spawn,
@@ -75,6 +97,7 @@ module.exports.loop = function () {
             e_sources: e_sources,
             m_sources: m_sources,
             containers_by_source: containers_by_source,
+            links_by_source: links_by_source,
             construction_sites: construction_sites,
             towers: towers,
             terminal: curRoom.terminal,
@@ -83,10 +106,10 @@ module.exports.loop = function () {
             links: links,
             extractor: extractor,
             factory: factory,
-            nuker: nuker
-
+            nuker: nuker,
+            damaged_structures: damaged_structures,
         };
-
+        all_structures_in_room[curRoom.name] = all_structures;
 
         // -------------------------------------
         // tower logic
@@ -118,9 +141,9 @@ module.exports.loop = function () {
                         }
                         else { // no repairable non-wall structure -> repair walls too if allowed
                             if (curRoom.memory.tower_repair_walls) {
-                                var damagedStructure = _.filter(tower.room.find(FIND_STRUCTURES), (s) => (s.hits < s.hitsMax) && (s.structureType == STRUCTURE_WALL ? (s.hits <= wall_max_hp) : true) && (s.structureType == STRUCTURE_RAMPART ? (s.hits <= rampart_max_hp) : true)).sort(function (a, b) { return +a.hits - +b.hits });
-                                if (damagedStructure) {
-                                    tower.repair(damagedStructure[0]);
+
+                                if (damaged_structures.length > 0) {
+                                    tower.repair(damaged_structures[0]);
                                 }
                             }
                         }
@@ -128,18 +151,6 @@ module.exports.loop = function () {
                 }
             }
         }
-
-        // -------------------------------------
-        // link logic
-        // -------------------------------------
-        if (curRoom.memory.link_avail_ug) {
-            var link_base = main_spawn.pos.findClosestByRange(curRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LINK } }));
-            var link_controller = curRoom.controller.pos.findClosestByRange(curRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LINK } }));
-            if (link_controller.store.getFreeCapacity(RESOURCE_ENERGY) > link_controller.store.getCapacity(RESOURCE_ENERGY) * 0.5) {
-                link_base.transferEnergy(link_controller);
-            }
-        }
-        // -------------------------------------
 
         // -------------------------------------
         // market and terminal trades
@@ -186,6 +197,7 @@ module.exports.loop = function () {
         manageStage(curRoom, all_structures);
         manageSpawns(curRoom, all_structures);
         visuals.run(curRoom, all_structures);
+        linkManager.run(curRoom, all_structures);
 
         // -------------------------------------
         // claim flags: spawn claimer
@@ -194,35 +206,9 @@ module.exports.loop = function () {
 
         // skip if no claim flags
         if (claimFlags.length > 0) {
-
-            // check all claim flags to see if any still need claimer
             for (const flag of claimFlags) {
                 const targetRoom = flag.pos.roomName;
-
-                // if we already have a claimer assigned to this target
-                const existingClaimers = _.filter(Game.creeps, c =>
-                    c.memory.role === 'claimer' &&
-                    c.memory.targetRoom === targetRoom
-                );
-
-                // spawn new claimer only if none exist for this flag
-                if (existingClaimers.length === 0) {
-                    var newName = 'L-' + genUUID(curRoom.name);
-                    const body = [MOVE, CLAIM, MOVE, MOVE, MOVE, MOVE, CARRY, WORK];
-
-                    const result = main_spawn.spawnCreep(body, newName, {
-                        memory: {
-                            role: 'claimer',
-                            homeRoom: main_spawn.room.name,
-                            targetFlag: flag.name,
-                            targetRoom: targetRoom
-                        }
-                    });
-
-                    if (result === OK) {
-                        console.log(`Spawning new claimer for ${targetRoom} via flag ${flag.name}`);
-                    }
-                }
+                spawnClaimer(curRoom, targetRoom, flag);
             }
         }
 
@@ -234,68 +220,7 @@ module.exports.loop = function () {
             r.controller && r.controller.my && r.find(FIND_MY_SPAWNS).length === 0);
 
         for (const remoteRoom of newRooms) {
-            const remoteName = remoteRoom.name;
-            const remoteCreeps = _.filter(Game.creeps, c => c.memory.targetRoom === remoteName);
-
-            const numHarvesters = _.filter(remoteCreeps, c => c.memory.role === 'harvester').length;
-            const numBuilders = _.filter(remoteCreeps, c => c.memory.role === 'builder').length;
-            const numUpgraders = _.filter(remoteCreeps, c => c.memory.role === 'upgrader').length;
-
-            // get the sources in the remote room (may be undefined if not visible)
-            const sources = remoteRoom.find(FIND_SOURCES);
-
-            // spawn bootstrap creeps
-            if (numHarvesters < sources.length) {
-                const unassignedSources = sources.filter(src =>
-                    !_.some(remoteCreeps, c => c.memory.sourceID === src.id && c.memory.role === 'harvester')
-                );
-
-                if (unassignedSources.length > 0) {
-                    const src = unassignedSources[0];
-                    const name = 'INIT-H-' + genUUID(remoteName);
-                    const res = main_spawn.spawnCreep(
-                        [WORK, WORK, WORK, MOVE, MOVE],
-                        name,
-                        {
-                            memory: {
-                                role: 'harvester',
-                                targetRoom: remoteName,
-                                homeRoom: main_spawn.room.name,
-                                sourceID: src.id
-                            }
-                        }
-                    );
-                    if (res === OK) console.log(`Spawning remote harvester for ${remoteName}, source ${src.id}`);
-                }
-            } else if (numBuilders < 2) {
-                const name = 'INIT-B-' + genUUID(remoteName);
-                const res = main_spawn.spawnCreep(
-                    [WORK, CARRY, CARRY, MOVE, MOVE],
-                    name,
-                    {
-                        memory: {
-                            role: 'builder',
-                            targetRoom: remoteName,
-                            homeRoom: main_spawn.room.name
-                        }
-                    }
-                );
-                if (res === OK) console.log(`Spawning remote builder for ${remoteName}`);
-            } else if (numUpgraders < 1) {
-                const name = 'INIT-U-' + genUUID(remoteName);
-                const res = main_spawn.spawnCreep(
-                    [WORK, WORK, CARRY, MOVE, MOVE],
-                    name,
-                    {
-                        memory: {
-                            role: 'upgrader',
-                            targetRoom: remoteName,
-                            homeRoom: main_spawn.room.name
-                        }
-                    }
-                );
-                if (res === OK) console.log(`Spawning remote upgrader for ${remoteName}`);
-            }
+            spawnBootstrap(curRoom, remoteRoom);
         }
 
         // -------------------------------------
@@ -304,123 +229,34 @@ module.exports.loop = function () {
         const supportFlags = Object.values(Game.flags).filter(f => f.name.toLowerCase().includes('support'));
 
         for (const flag of supportFlags) {
-            const targetRoom = flag.pos.roomName;
+            const targetRoom = flag.room;
 
             // skip if the current loop room is the target
-            if (curRoom.name === targetRoom) continue;
+            if (curRoom.name === targetRoom.name) continue;
 
             // skip low-level rooms (we only want well-developed supporters)
             if (curRoom.controller.level < 7) continue;
 
-            const targetCreeps = _.filter(Game.creeps, c => c.memory.targetRoom === targetRoom);
-            const numHarvesters = _.filter(targetCreeps, c => c.memory.role === 'harvester' && c.memory.support).length;
-            const numBuilders = _.filter(targetCreeps, c => c.memory.role === 'builder' && c.memory.support).length;
-            const numUpgraders = _.filter(targetCreeps, c => c.memory.role === 'upgrader' && c.memory.support).length;
-
-            const sources = Game.rooms[targetRoom].find(FIND_SOURCES);
-
-            if (numHarvesters < sources.length && !main_spawn.spawning) {
-                const unassignedSources = sources.filter(src =>
-                    !_.some(targetCreeps, c => c.memory.sourceID === src.id && c.memory.role === 'harvester' && c.memory.support)
-                );
-                if (unassignedSources.length > 0) {
-                    const src = unassignedSources[0];
-                    const name = 'SUP-H-' + genUUID(targetRoom);
-                    const res = main_spawn.spawnCreep(
-                        [WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE],
-                        name,
-                        {
-                            memory: {
-                                role: 'harvester',
-                                targetRoom,
-                                homeRoom: curRoom.name,
-                                sourceID: src.id,
-                                support: true
-                            }
-                        }
-                    );
-                    if (res === OK) console.log(`Spawning remote harvester for ${targetRoom}, source ${src.id}`);
-                }
-
-            }
-
-            // spawn up to 2 builders for target room
-            else if (numBuilders < 2 && !main_spawn.spawning) {
-                const name = 'SUP-B-' + genUUID(targetRoom);
-                const res = main_spawn.spawnCreep(
-                    [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
-                    name,
-                    {
-                        memory: {
-                            role: 'builder',
-                            targetRoom,
-                            homeRoom: curRoom.name,
-                            support: true
-                        }
-                    }
-                );
-                if (res === OK) console.log(`${curRoom.name}: Supporting ${targetRoom} with Builder`);
-            }
-            else if (numUpgraders < 1) {
-                const name = 'SUP-U-' + genUUID(targetRoom);
-                const res = main_spawn.spawnCreep(
-                    [WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE],
-                    name,
-                    {
-                        memory: {
-                            role: 'upgrader',
-                            targetRoom,
-                            homeRoom: curRoom.name,
-                            support: true
-                        }
-                    }
-                );
-                if (res === OK) console.log(`${curRoom.name}: Supporting ${targetRoom} with Upgrader`);
-            }
+            spawnSupporter(curRoom, targetRoom, flag);
         }
 
         // -------------------------------------
         // scout logic
-        // -------------------------------------
         // only well-developed rooms should send scouts
-        if (curRoom.controller && curRoom.controller.level >= 7) {
-            const scoutFlags = Object.values(Game.flags).filter(f => f.name.toLowerCase().includes('scout'));
+        // -------------------------------------
+        const scoutFlags = Object.values(Game.flags).filter(f => f.name.toLowerCase().includes('scout'));
 
-            // spawn interval control
-            if (!Memory.lastScoutSpawn) Memory.lastScoutSpawn = 0;
+        // spawn interval control
+        if (!Memory.lastScoutSpawn) Memory.lastScoutSpawn = 0;
 
-            if (Game.time - Memory.lastScoutSpawn > 500 && scoutFlags.length > 0) {
-                for (const flag of scoutFlags) {
-                    // skip if this room is the target
-                    if (curRoom.name === flag.pos.roomName) continue;
+        if (curRoom.controller.level >= 7 && Game.time - Memory.lastScoutSpawn > 500 && scoutFlags.length > 0) {
+            for (const flag of scoutFlags) {
+                // skip if this room is the target
+                if (curRoom.name === flag.pos.roomName) continue;
 
-                    // skip if already has a scout assigned
-                    const existing = _.some(Game.creeps, c =>
-                        c.memory.role === 'scout' &&
-                        c.memory.targetFlag === flag.name
-                    );
-                    if (existing) continue;
-
-                    var newName = 'SCOUT-' + genUUID(curRoom.name);
-                    const res = main_spawn.spawnCreep(
-                        [MOVE],
-                        newName,
-                        {
-                            memory: {
-                                role: 'scout',
-                                homeRoom: curRoom.name,
-                                targetFlag: flag.name,
-                                targetRoom: flag.pos.roomName
-                            }
-                        }
-                    );
-
-                    if (res === OK) {
-                        Memory.lastScoutSpawn = Game.time;
-                        console.log(`Dispatching scout ${newName} from ${curRoom.name} to ${flag.pos.roomName}`);
-                        break; // only send one per interval
-                    }
-                }
+                spawnScout(curRoom, flag.pos.room, flag);
+                Memory.lastScoutSpawn = Game.time;
+                break;
             }
         }
 
@@ -451,9 +287,9 @@ module.exports.loop = function () {
         const role = creep.memory.role;
 
         if (roles[role]) {
-            roles[role].run(creep);
+            roles[role].run(creep, all_structures_in_room[creep.room.name]);
         } else {
-            console.log(`[Error] Unknown role: ${role} (${creep.name})`);
+            console.log(`[ERROR] Unknown role: ${role} (${creep.name})`);
         }
     }
 
@@ -470,3 +306,8 @@ module.exports.loop = function () {
         }
     }
 }
+
+global.reset_memory = function () {
+    for (const key in Memory) delete Memory[key];
+    console.log("[INFO] Memory wiped.");
+};

@@ -3,7 +3,7 @@
 var roleSplitter = {
 
     /** @param {Creep} creep **/
-    run: function (creep) {
+    run: function (creep, struct) {
         // no energy -> collect
         if (creep.store[RESOURCE_ENERGY] <= 0) {
             creep.memory.collecting = true;
@@ -13,7 +13,11 @@ var roleSplitter = {
             creep.memory.collecting = false;
         }
 
-        var storage = creep.room.storage; // simpler than .find
+        const storage = creep.room.storage; // simpler than .find
+        const terminal = creep.room.terminal;
+        const ids = creep.room.memory.struct_ids;
+        const main_spawn_id = Memory.rooms[creep.room.name].struct_ids.main_spawn_id;
+
 
         // collect logic
         if (creep.memory.collecting && creep.store.getFreeCapacity() > 0) {
@@ -32,10 +36,10 @@ var roleSplitter = {
                         creep.moveTo(storage, { visualizePathStyle: { stroke: '#0095ff' } });
                     }
                 }
-                // storgae is empty -> idle
+                // storage is empty -> idle
                 else {
-                    //console.log("[ERROR] cannot split, no energy in storage");
-                    creep.moveTo(creep.pos.findClosestByRange(creep.room.find(FIND_MY_SPAWNS)), { visualizePathStyle: { stroke: '#ffffff' } });
+                    creep.moveTo(Game.getObjectById(main_spawn_id), { visualizePathStyle: { stroke: '#ffffff' } });
+                    creep.memory.collecting = false;
                 }
             }
         }
@@ -43,16 +47,6 @@ var roleSplitter = {
         // split logic
         else {
             // target definitions
-
-            var main_spawn_id = Memory.rooms[creep.room.name].mainSpawnId;
-
-            if (!main_spawn_id) {
-                // fallback: pick the first available spawn in the room
-                var fallback = creep.room.find(FIND_MY_SPAWNS)[0];
-                if (!fallback) return;
-                main_spawn_id = fallback.id;
-            }
-
             var prio_targets = creep.room.find(FIND_STRUCTURES, {
                 filter: (structure) => {
                     return (structure.structureType == STRUCTURE_EXTENSION || (structure.structureType === STRUCTURE_SPAWN && structure.id === main_spawn_id)) &&
@@ -64,15 +58,11 @@ var roleSplitter = {
                     return (structure.structureType == STRUCTURE_TOWER) && (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) && (structure.structureType == STRUCTURE_TOWER ? (structure.store[RESOURCE_ENERGY] <= (structure.energyCapacity * 0.85)) : true);
                 }
             });
-            var link_targets = creep.room.find(FIND_STRUCTURES, {
-                filter: (s) => {
-                    return (s.structureType == STRUCTURE_LINK) && (s.store.getFreeCapacity(RESOURCE_ENERGY) > 0) && (s.structureType == STRUCTURE_LINK ? (s.store[RESOURCE_ENERGY] <= (s.energyCapacity * 0.85)) : true);
-                }
-            });
-            // NOTE link_targets becomes a singular target object at this point
-            link_targets = creep.room.find(FIND_MY_SPAWNS)[0].pos.findInRange(link_targets, 6);
-            var terminal = creep.room.terminal;
-
+            var link_targets = [];
+            const link_base = ids.link_base_id ? Game.getObjectById(ids.link_base_id) : null;
+            if (link_base && link_base.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && link_base.store[RESOURCE_ENERGY] <= (link_base.store.getCapacity(RESOURCE_ENERGY) * 0.85)) {
+                link_targets.push(link_base);
+            }
 
             if (prio_targets.length > 0) {
                 var t = creep.pos.findClosestByPath(prio_targets);
@@ -103,7 +93,7 @@ var roleSplitter = {
                         }
                         else { // absolutely no target -> idle
                             creep.memory.collecting = true;
-                            creep.moveTo(creep.room.find(FIND_MY_SPAWNS)[0], { visualizePathStyle: { stroke: '#ffffff' } });
+                            creep.moveTo(Game.getObjectById(main_spawn_id), { visualizePathStyle: { stroke: '#ffffff' } });
                         }
                     }
                 }

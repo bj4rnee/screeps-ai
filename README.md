@@ -8,9 +8,10 @@ to get VS Code to use autocomplete for screeps run the following commands in the
 `npm install @types/lodash`
 
 # TODO
-- [ ] improve screep queueing and spawning
+- [x] improve screep queueing and spawning
 - [ ] add Game.notify() to important events
 - [ ] improve active defense logic
 - [ ] refactor carrier
 - [ ] add lab function
 - [x] repair walls, if excess of energy
+- [ ] user Traveler.js for movement

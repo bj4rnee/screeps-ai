@@ -2,7 +2,7 @@
 var roleLabtech = {
 
     /** @param {Creep} creep **/
-    run: function (creep) {
+    run: function (creep, struct) {
 
 
     }

@@ -1,7 +1,7 @@
 var roleUpgrader = {
 
     /** @param {Creep} creep **/
-    run: function (creep) {
+    run: function (creep, struct) {
 
         // first new room claiming bootstrap
         if (creep.memory.targetRoom && creep.room.name !== creep.memory.targetRoom) {
@@ -12,13 +12,18 @@ var roleUpgrader = {
         }
 
         if (creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
-            creep.memory.upgrading = false;//false
-            //creep.say('🔄 collect');
+            creep.memory.upgrading = false;
+
         }
         if (!creep.memory.upgrading && creep.store.getFreeCapacity() == 0) {
             creep.memory.upgrading = true;
-            //creep.say('⚡ upgrade');
         }
+
+        const ids = creep.room.memory.struct_ids;
+        const link_ctrl = ids.link_controller_id ? Game.getObjectById(ids.link_controller_id) : null;
+        const storage = creep.room.storage;
+
+        // stage 1 behavior
         if (creep.room.memory.stage < 2) {
             if (creep.memory.upgrading) {
 
@@ -29,7 +34,7 @@ var roleUpgrader = {
             //collect energy
             else {
                 var dropPoints = [...creep.room.find(FIND_DROPPED_RESOURCES)];
-                var closest_DPoint = creep.pos.findClosestByPath(dropPoints);
+                var closest_DPoint = creep.pos.findClosestByRange(dropPoints);
                 if (creep.pickup(closest_DPoint, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(closest_DPoint, { visualizePathStyle: { stroke: '#0095ff' } });
                 }
@@ -56,32 +61,32 @@ var roleUpgrader = {
                 }
                 else {
                     //check if link system is present -> use it
-                    if (creep.room.memory.link_avail_ug) {
-                        var link_controller = creep.room.controller.pos.findClosestByRange(creep.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LINK } }));
-                        if (creep.withdraw(link_controller, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(link_controller, { visualizePathStyle: { stroke: '#ffaa00' } });
+                    if (creep.room.memory.link_avail_ug && link_ctrl) {
+                        if (creep.withdraw(link_ctrl, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(link_ctrl, { visualizePathStyle: { stroke: '#ffaa00' } });
                         }
                         // no link system -> go collect energy manually
                     } else {
-                        //if storage is available -> target it. otherwise target both
-                        if (creep.room.find(FIND_STRUCTURES, { filter: (structure) => { return (structure.structureType == STRUCTURE_STORAGE); } }).length > 0) {// TODO maybe remove energy requirement
-                            var csources = creep.room.find(FIND_STRUCTURES, {
-                                filter: (structure) => {
-                                    return (structure.structureType == STRUCTURE_STORAGE) && structure.store[RESOURCE_ENERGY] > 0;
-                                }
-                            });
-                        } else {
-                            var csources = creep.room.find(FIND_STRUCTURES, {
-                                filter: (structure) => {
-                                    return (structure.structureType == STRUCTURE_CONTAINER || structure.structureType == STRUCTURE_STORAGE) &&
-                                        structure.store[RESOURCE_ENERGY] > 0;
-                                }
-                            });
-                        }
-                        var closestCSource = creep.pos.findClosestByPath(csources);
+                        //if storage is available -> target it. otherwise target containers
+                        let sources = [];
 
-                        if (creep.withdraw(closestCSource, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(closestCSource, { visualizePathStyle: { stroke: '#ffaa00' } });
+                        // 1 prefer storage
+                        if (storage && storage.store[RESOURCE_ENERGY] > 0) {
+                            sources.push(storage);
+                        } else {
+                            // 2 otherwise containers
+                            for (const c of struct.containers) {
+                                if (c.store[RESOURCE_ENERGY] > 0) sources.push(c);
+                            }
+                        }
+
+                        if (sources.length === 0) return; // nothing to take
+
+                        const target = creep.pos.findClosestByRange(sources);
+                        if (!target) return;
+
+                        if (creep.withdraw(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                            creep.moveTo(target, { visualizePathStyle: { stroke: '#ffaa00' } });
                         }
                     }
                 }

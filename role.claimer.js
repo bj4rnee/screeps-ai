@@ -1,6 +1,6 @@
 var roleClaimer = {
     /** @param {Creep} creep **/
-    run: function (creep) {
+    run: function (creep, struct) {
         // check if the creep has an assigned flag or room
         if (!creep.memory.targetFlag || !creep.memory.targetRoom) {
             var flags = Object.values(Game.flags);

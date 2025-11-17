@@ -1,7 +1,7 @@
 var roleBuilder = {
 
     /** @param {Creep} creep **/
-    run: function (creep) {
+    run: function (creep, struct) {
 
         // first new room claiming bootstrap
         if (creep.memory.targetRoom && creep.room.name !== creep.memory.targetRoom) {

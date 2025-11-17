@@ -1,7 +1,7 @@
 var roleExtractor = {
 
     /** @param {Creep} creep **/
-    run: function (creep) {
+    run: function (creep, struct) {
 
         if (creep.memory.extracting && creep.carryCapacity == _.sum(creep.carry)) {
             creep.memory.extracting = false;

@@ -27,7 +27,10 @@ function manageStage(room, struct) {
     }
 
     // if a link system is available for upgraders to use (contr lvl 5+ only)
-    room.memory.link_avail_ug = (struct.links.length >= 2) ? true : false; 
+    room.memory.link_avail_ug = (struct.links.length >= 2) ? true : false;
+
+    // if link system can be used for mining
+    room.memory.link_avail_mine = (struct.links_by_source.length >= struct.e_sources.length) ? true : false;
 
     // store mineral type in room memory
     if (!room.memory.mineralType) {

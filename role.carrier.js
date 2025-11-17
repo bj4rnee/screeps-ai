@@ -3,7 +3,7 @@ const BASE_MINERALS = ["H", "O", "U", "K", "L", "Z", "X"];
 var roleCarrier = {
 
     /** @param {Creep} creep **/
-    run: function (creep) {
+    run: function (creep, struct) {
         // no energy -> collect
         if (_.sum(creep.carry) <= 0) {
             creep.memory.collecting = true;

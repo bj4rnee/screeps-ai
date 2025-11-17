@@ -1,5 +1,5 @@
 var roleDefender = {
-    run: function (creep) {
+    run: function (creep, struct) {
         var attack_targets = creep.room.find(FIND_HOSTILE_CREEPS);
         var attack_target = creep.pos.findClosestByPath(attack_targets);
         var rampartsAvailable = _.filter(creep.room.find(FIND_STRUCTURES), (s) => s.structureType === STRUCTURE_RAMPART && s.room.lookForAt(LOOK_CREEPS, s.pos).length === 0);

@@ -1,6 +1,6 @@
 var roleScout = {
     /** @param {Creep} creep **/
-    run: function (creep) {
+    run: function (creep, struct) {
         // if scout has no target flag assigned, pick one
         if (!creep.memory.targetFlag || !creep.memory.targetRoom) {
             const flags = Object.values(Game.flags).filter(f => f.name.toLowerCase().includes('scout'));

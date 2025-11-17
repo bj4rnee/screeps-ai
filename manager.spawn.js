@@ -67,6 +67,23 @@ function nextUnassignedContainer(room, role, containers) {
     return null;
 }
 
+function nextUnassignedRemoteSource(room, role, sources) {
+    if (!sources || sources.length === 0) return null;
+
+    const creeps = _.filter(Game.creeps, c => c.memory.role === role && c.memory.targetRoom === room.name);
+    const queued = room.memory.spawn_queue.filter(e => e.role === role && e.memory.targetRoom === room.name);
+    const comb = [].concat(creeps, queued);
+
+    for (let source of sources) {
+        var assigned = comb.some(h => h.memory.sourceID === source.id);
+        if (!assigned) {
+            return source;
+        }
+
+    }
+    return null;
+}
+
 /** get optimal spawnId for a role (nearest to predicted target)
  * @param {*} room
  * @param {*} spawns
@@ -273,7 +290,131 @@ function manageSpawns(room, struct) {
     dequeueCreep(room);
 }
 
+// helper to count live + queued for a role in target room
+function countRemote(spawnRoom, role, targetRoomName) {
+    const live = _.filter(Game.creeps, c => c.memory.role === role && c.memory.targetRoom === targetRoomName).length;
+    const queued = spawnRoom.memory.spawn_queue.filter(e => e.role === role && e.memory.targetRoom === targetRoomName).length;
+    return live + queued;
+}
+
+/** spawn a claimer for a target room and flag
+ * @param {*} room 
+ * @param {*} targetRoomName 
+ * @param {*} flag 
+ */
+function spawnClaimer(room, targetRoomName, flag) {
+    // spawn new claimer only if none exist for this flag
+    if (countRemote(room, 'claimer', targetRoomName) < 1) {
+        const newName = 'L-' + genUUID(room.name);
+        const body = [MOVE, CLAIM, MOVE, MOVE, MOVE, MOVE, CARRY, WORK];
+        queueCreep(room, body, newName, 'claimer', {
+            homeRoom: room.name,
+            targetFlag: flag.name,
+            targetRoom: targetRoomName
+        });
+    }
+}
+
+function spawnBootstrap(room, targetRoom) {
+    const targetRoomName = targetRoom.name;
+
+    // get the sources in the remote room (may be undefined if not visible)
+    const sources = targetRoom.find(FIND_SOURCES);
+
+    // spawn bootstrap creeps
+    if (countRemote(room, 'harvester', targetRoomName) < sources.length) {
+        const newName = 'INIT-H-' + genUUID(targetRoomName);
+        const body = [WORK, WORK, WORK, MOVE, MOVE];
+        queueCreep(room, body, newName, 'harvester', {
+            homeRoom: room.name,
+            targetRoom: targetRoomName,
+            sourceID: nextUnassignedRemoteSource(targetRoom, 'harvester', sources)
+        });
+    }
+    if (countRemote(room, 'builder', targetRoomName) < 2) {
+        const newName = 'INIT-B-' + genUUID(targetRoomName);
+        const body = [WORK, CARRY, CARRY, MOVE, MOVE];
+        queueCreep(room, body, newName, 'builder', {
+            homeRoom: room.name,
+            targetRoom: targetRoomName
+        });
+    }
+    if (countRemote(room, 'upgrader', targetRoomName) < 1) {
+        const newName = 'INIT-U-' + genUUID(targetRoomName);
+        const body = [WORK, WORK, CARRY, MOVE, MOVE];
+        queueCreep(room, body, newName, 'upgrader', {
+            homeRoom: room.name,
+            targetRoom: targetRoomName
+        });
+    }
+}
+
+function spawnSupporter(room, targetRoom, flag) {
+    const targetRoomName = targetRoom.name;
+    const sources = targetRoom.find(FIND_SOURCES);
+
+    if (countRemote(room, 'harvester', targetRoomName) < sources.length) {
+        const newName = 'SUP-H-' + genUUID(targetRoomName);
+        const body = [WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE];
+        queueCreep(room, body, newName, 'harvester', {
+            targetRoom: targetRoomName,
+            homeRoom: room.name,
+            support: true,
+            sourceID: nextUnassignedRemoteSource(targetRoom, 'harvester', sources)
+        });
+
+    }
+    // spawn up to 2 builders for target room
+    if (countRemote(room, 'builder', targetRoomName) < 2) {
+        const newName = 'SUP-B-' + genUUID(targetRoomName);
+        const body = [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE];
+        queueCreep(room, body, newName, 'builder', {
+            targetRoom: targetRoomName,
+            homeRoom: room.name,
+            support: true
+        });
+    }
+    if (countRemote(room, 'upgrader', targetRoomName) < 1) {
+        const newName = 'SUP-U-' + genUUID(targetRoomName);
+        const body = [WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE];
+        queueCreep(room, body, newName, 'upgrader', {
+            targetRoom: targetRoomName,
+            homeRoom: room.name,
+            support: true
+        });
+    }
+}
+
+function spawnScout(room, targetRoom, flag) {
+    const targetRoomName = targetRoom.name;
+    // skip if already has a scout assigned
+    const existing = _.some(Game.creeps, c =>
+        c.memory.role === 'scout' &&
+        c.memory.targetFlag === flag.name
+    );
+    const queued = room.memory.spawn_queue.some(e =>
+        e.role === 'scout' &&
+        e.memory.targetFlag === flag.name
+    );
+
+    if (existing || queued) return;
+
+    var newName = 'SCOUT-' + genUUID(targetRoomName);
+
+    queueCreep(room, [MOVE], newName, 'scout', {
+        homeRoom: room.name,
+        targetFlag: flag.name,
+        targetRoom: targetRoomName
+    });
+
+    console.log(`Queued scout ${newName} from ${room.name} to ${flag.pos.roomName}`);
+}
+
 module.exports = {
     manageSpawns,
+    spawnClaimer,
+    spawnBootstrap,
+    spawnSupporter,
+    spawnScout,
     genUUID,
 }
