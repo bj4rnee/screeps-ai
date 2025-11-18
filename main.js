@@ -5,6 +5,7 @@
 const roles = require('./roles');
 const visuals = require('./manager.visuals');
 const linkManager = require('./manager.link');
+const log = require('./manager.log');
 const { manageStage } = require('./manager.stage');
 const {
     manageSpawns,
@@ -166,12 +167,10 @@ module.exports.loop = function () {
                     // INFO this only consideres orders where max amount can be dealt
                     Game.market.calcTransactionCost(Math.min(available_mineral, order.remainingAmount), curRoom.name, order.roomName) <= available_energy);
                 orders.sort(function (a, b) { return b.price - a.price; });
-                console.log(`[MARKET] ${orders[0].resourceType} => orders found: ${orders.length}, best price: ${orders[0].price}, amount: ${orders[0].amount}`);
+                log.market(`[MARKET] ${orders[0].resourceType} => orders found: ${orders.length}, best price: ${orders[0].price}, amount: ${orders[0].amount}`, curRoom.name);
                 if (orders[0].price >= market_prices[orders[0].resourceType]) {
                     var result = Game.market.deal(orders[0].id, Math.min(available_mineral, orders[0].remainingAmount), curRoom.name);
-                    if (result == 0) {
-                        console.log(`[MARKET] ${orders[0].resourceType} => order completed successfully`);
-                    }
+                    if (result == 0) log.market(`[MARKET] ${orders[0].resourceType} => order completed successfully`, curRoom.name);
                 }
             }
             // sell excess energy
@@ -183,10 +182,10 @@ module.exports.loop = function () {
                     // INFO this only consideres orders where max amount can be dealt
                     Game.market.calcTransactionCost(Math.min(sellable_energy, order.remainingAmount), curRoom.name, order.roomName) <= available_energy);
                 orders.sort(function (a, b) { return b.price - a.price; });
-                console.log(`[MARKET] ${orders[0].resourceType} => orders found: ${orders.length}, best price: ${orders[0].price}, amount: ${orders[0].amount}`);
+                log.market(`[MARKET] ${orders[0].resourceType} => orders found: ${orders.length}, best price: ${orders[0].price}, amount: ${orders[0].amount}`, curRoom.name);
                 if (orders[0].price >= market_prices[orders[0].resourceType]) {
                     var result = Game.market.deal(orders[0].id, Math.min(sellable_energy, orders[0].remainingAmount), curRoom.name);
-                    if (result == 0) console.log(`[MARKET] ${orders[0].resourceType} => order completed successfully`);
+                    if (result == 0) log.market(`[MARKET] ${orders[0].resourceType} => order completed successfully`, curRoom.name);
                 }
             }
         }
