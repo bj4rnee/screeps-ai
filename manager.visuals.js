@@ -239,7 +239,7 @@ function visualizeSpawns(struct) {
  *  tracks last 50 ticks of CPU used per tick
  * @param {*} room 
  * @returns 
- */
+*/
 function visualizeCPU(room) {
     // initit tracking
     if (!room.memory.cpuTracking) {
@@ -248,8 +248,10 @@ function visualizeCPU(room) {
             avg: 0
         };
     }
-
+    
     const tracking = room.memory.cpuTracking;
+    const maxCpu = Game.cpu.limit;
+    const minCpu = 0;
 
     tracking.history.push({
         tick: Game.time,
@@ -278,9 +280,7 @@ function visualizeCPU(room) {
 
     if (tracking.history.length < 2) return; // need data
 
-    const data = tracking.history.map(entry => Math.min(entry.cpu, 20));
-    const maxCpu = 20;
-    const minCpu = 0;
+    const data = tracking.history.map(entry => Math.min(entry.cpu, maxCpu));
 
     // polyline points
     const points = [];

@@ -28,7 +28,7 @@ module.exports.loop = function () {
     for (var name in Memory.creeps) {
         if (!Game.creeps[name]) {
             delete Memory.creeps[name];
-            console.log('Clearing non-existing creep memory:', name);
+            console.log('[INFO] Cleared non-existing creep memory:', name);
         }
     }
 
@@ -165,13 +165,12 @@ module.exports.loop = function () {
                     order.type == ORDER_BUY && order.amount >= 5 &&
                     // INFO this only consideres orders where max amount can be dealt
                     Game.market.calcTransactionCost(Math.min(available_mineral, order.remainingAmount), curRoom.name, order.roomName) <= available_energy);
-                console.log("'" + curRoom.memory.mineralType + "'" + ' buy orders found: ' + orders.length);
                 orders.sort(function (a, b) { return b.price - a.price; });
-                console.log('Best price: ' + orders[0].price);
+                console.log(`[MARKET] ${orders[0].resourceType} => orders found: ${orders.length}, best price: ${orders[0].price}, amount: ${orders[0].amount}`);
                 if (orders[0].price >= market_prices[orders[0].resourceType]) {
                     var result = Game.market.deal(orders[0].id, Math.min(available_mineral, orders[0].remainingAmount), curRoom.name);
                     if (result == 0) {
-                        console.log(`${orders[0].resourceType}: Order completed successfully`);
+                        console.log(`[MARKET] ${orders[0].resourceType} => order completed successfully`);
                     }
                 }
             }
@@ -183,14 +182,11 @@ module.exports.loop = function () {
                     order.type == ORDER_BUY && order.amount >= 20 &&
                     // INFO this only consideres orders where max amount can be dealt
                     Game.market.calcTransactionCost(Math.min(sellable_energy, order.remainingAmount), curRoom.name, order.roomName) <= available_energy);
-                console.log("'" + RESOURCE_ENERGY + "'" + ' buy orders found: ' + orders.length);
                 orders.sort(function (a, b) { return b.price - a.price; });
-                console.log('Best price: ' + orders[0].price);
+                console.log(`[MARKET] ${orders[0].resourceType} => orders found: ${orders.length}, best price: ${orders[0].price}, amount: ${orders[0].amount}`);
                 if (orders[0].price >= market_prices[orders[0].resourceType]) {
                     var result = Game.market.deal(orders[0].id, Math.min(sellable_energy, orders[0].remainingAmount), curRoom.name);
-                    if (result == 0) {
-                        console.log(`${orders[0].resourceType}: Order completed successfully`);
-                    }
+                    if (result == 0) console.log(`[MARKET] ${orders[0].resourceType} => order completed successfully`);
                 }
             }
         }
@@ -263,7 +259,7 @@ module.exports.loop = function () {
 
         // invader failsave
         if (curRoom.memory.attacked) {
-            console.log(curRoom.name + " is being attacked by " + JSON.stringify(curRoom.find(FIND_HOSTILE_CREEPS).map(a => a.name)));
+            console.log(`[WARN] ${curRoom.name} is being attacked by ${JSON.stringify(curRoom.find(FIND_HOSTILE_CREEPS).map(a => a.name))}`);
             //Game.notify(curRoom.name + " is being attacked by " + JSON.stringify(curRoom.find(FIND_HOSTILE_CREEPS).map(a => a.name)));
             if (false && !curRoom.controller.safeMode && curRoom.controller.safeModeAvailable) {
                 console.log("[INFO] activating safeMode in room " + curRoom.name);
@@ -298,7 +294,7 @@ module.exports.loop = function () {
     if (Game.time % 100 === 0) {
         const memorySize = JSON.stringify(Memory).length;
         if (memorySize > 1000000) {
-            console.log('Memory approaching dangerous levels: ', memorySize);
+            console.log('[WARN] Memory approaching dangerous levels: ', memorySize);
             console.log(
                 Object.keys(Memory)
                     .map(k => `Memory.${k}: ${JSON.stringify(Memory[k]).length}`)

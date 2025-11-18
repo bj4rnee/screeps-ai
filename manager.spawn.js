@@ -406,7 +406,7 @@ function spawnScout(room, targetRoomName, flag) {
         targetRoom: targetRoomName
     });
 
-    console.log(`Queued scout ${newName} from ${room.name} to ${flag.pos.roomName}`);
+    console.log(`[INFO] Queued scout ${newName} from ${room.name} to ${flag.pos.roomName}`);
 }
 
 module.exports = {

@@ -101,7 +101,7 @@ function dequeueCreep(room, dryRun = false, force = false) {
         const result = targetSpawn.spawnCreep(body, name, options);
 
         if (result === OK) {
-            console.log(`Spawned ${role}: ${name} at ${targetSpawn.name}`);
+            console.log(`[INFO] Spawned ${role}: ${name} at ${targetSpawn.name}`);
             spawned[targetSpawn.name] = true;
         } else {
             const shouldRequeue = (
