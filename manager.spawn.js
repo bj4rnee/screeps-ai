@@ -1,4 +1,5 @@
 const { queueCreep, dequeueCreep, initRoomMemory } = require('creep-queue');
+const log = require('./manager.log');
 
 /** generate a UUID for creep names
  * @param {*} roomName string
@@ -235,6 +236,7 @@ function manageSpawns(room, struct) {
             var ns = 1;
             if (room.memory.energyfull) { var nb = 1; var nu = 3; }
             if (room.memory.link_avail_ug) nu = 1;
+            if (room.controller.level < 8) nu = 2;
             if (room.memory.attacked) { nd = 1; nu = 1; nb = 0; }
             if (struct.construction_sites.length <= 0) nb = 0;
 
@@ -279,10 +281,10 @@ function manageSpawns(room, struct) {
             }
             break;
         case 5:
-            console.log("[ERROR] not implemented yet");
+            log.error("not implemented yet", room.name);
             break;
         default:
-            console.log("[ERROR] could not detect game's stage");
+            log.error("[ERROR] could not detect game's stage", room.name);
             break;
     }
 
@@ -406,7 +408,7 @@ function spawnScout(room, targetRoomName, flag) {
         targetRoom: targetRoomName
     });
 
-    console.log(`[INFO] Queued scout ${newName} from ${room.name} to ${flag.pos.roomName}`);
+    log.info(`Queued scout ${newName} from ${room.name} to ${flag.pos.roomName}`, room.name);
 }
 
 module.exports = {

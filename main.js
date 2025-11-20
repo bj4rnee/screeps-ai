@@ -29,7 +29,7 @@ module.exports.loop = function () {
     for (var name in Memory.creeps) {
         if (!Game.creeps[name]) {
             delete Memory.creeps[name];
-            console.log('[INFO] Cleared non-existing creep memory:', name);
+            log.info('Cleared non-existing creep memory:', name);
         }
     }
 
@@ -167,10 +167,10 @@ module.exports.loop = function () {
                     // INFO this only consideres orders where max amount can be dealt
                     Game.market.calcTransactionCost(Math.min(available_mineral, order.remainingAmount), curRoom.name, order.roomName) <= available_energy);
                 orders.sort(function (a, b) { return b.price - a.price; });
-                log.market(`[MARKET] ${orders[0].resourceType} => orders found: ${orders.length}, best price: ${orders[0].price}, amount: ${orders[0].amount}`, curRoom.name);
+                log.market(`${orders[0].resourceType} => orders found: ${orders.length}, best price: ${orders[0].price}, amount: ${orders[0].amount}`, curRoom.name);
                 if (orders[0].price >= market_prices[orders[0].resourceType]) {
                     var result = Game.market.deal(orders[0].id, Math.min(available_mineral, orders[0].remainingAmount), curRoom.name);
-                    if (result == 0) log.market(`[MARKET] ${orders[0].resourceType} => order completed successfully`, curRoom.name);
+                    if (result == 0) log.market(`${orders[0].resourceType} => order completed successfully`, curRoom.name);
                 }
             }
             // sell excess energy
@@ -182,10 +182,10 @@ module.exports.loop = function () {
                     // INFO this only consideres orders where max amount can be dealt
                     Game.market.calcTransactionCost(Math.min(sellable_energy, order.remainingAmount), curRoom.name, order.roomName) <= available_energy);
                 orders.sort(function (a, b) { return b.price - a.price; });
-                log.market(`[MARKET] ${orders[0].resourceType} => orders found: ${orders.length}, best price: ${orders[0].price}, amount: ${orders[0].amount}`, curRoom.name);
+                log.market(`${orders[0].resourceType} => orders found: ${orders.length}, best price: ${orders[0].price}, amount: ${orders[0].amount}`, curRoom.name);
                 if (orders[0].price >= market_prices[orders[0].resourceType]) {
                     var result = Game.market.deal(orders[0].id, Math.min(sellable_energy, orders[0].remainingAmount), curRoom.name);
-                    if (result == 0) log.market(`[MARKET] ${orders[0].resourceType} => order completed successfully`, curRoom.name);
+                    if (result == 0) log.market(`${orders[0].resourceType} => order completed successfully`, curRoom.name);
                 }
             }
         }
@@ -258,20 +258,20 @@ module.exports.loop = function () {
 
         // invader failsave
         if (curRoom.memory.attacked) {
-            console.log(`[WARN] ${curRoom.name} is being attacked by ${JSON.stringify(curRoom.find(FIND_HOSTILE_CREEPS).map(a => a.name))}`);
+            log.warn(`${curRoom.name} is being attacked by ${JSON.stringify(curRoom.find(FIND_HOSTILE_CREEPS).map(a => a.name))}`, curRoom.name);
             //Game.notify(curRoom.name + " is being attacked by " + JSON.stringify(curRoom.find(FIND_HOSTILE_CREEPS).map(a => a.name)));
             if (false && !curRoom.controller.safeMode && curRoom.controller.safeModeAvailable) {
-                console.log("[INFO] activating safeMode in room " + curRoom.name);
+                log.info("activating safeMode in room " + curRoom.name, curRoom.name);
                 Game.notify("[INFO] activating safeMode in room " + curRoom.name);
                 //curRoom.controller.activateSafeMode();
             }
         }
 
         // controller decay failsave
-        if (curRoom.controller.my && curRoom.controller.ticksToDowngrade <= 250) {
-            console.log("[INFO] controller decaying in room " + curRoom.name);
+        if (curRoom.controller.my && curRoom.controller.ticksToDowngrade <= 15000) {
+            log.info("controller decaying in room " + curRoom.name, curRoom.name);
             Game.notify("[INFO] controller decaying in room " + curRoom.name);
-            // prio queue a creep to handle controller
+            // TODO prio queue a creep to handle controller
         }
     }
 
@@ -285,16 +285,16 @@ module.exports.loop = function () {
         if (roles[role]) {
             roles[role].run(creep, all_structures_in_room[creep.room.name]);
         } else {
-            console.log(`[ERROR] Unknown role: ${role} (${creep.name})`);
+            log.error(`Unknown role: ${role} (${creep.name})`, creep.room.name);
         }
     }
 
 
-    if (Game.time % 100 === 0) {
+    if (Game.time % 200 === 0) {
         const memorySize = JSON.stringify(Memory).length;
         if (memorySize > 1000000) {
-            console.log('[WARN] Memory approaching dangerous levels: ', memorySize);
-            console.log(
+            log.warn('Memory approaching dangerous levels: ', memorySize);
+            log.warn(
                 Object.keys(Memory)
                     .map(k => `Memory.${k}: ${JSON.stringify(Memory[k]).length}`)
                     .join('\n')
@@ -307,5 +307,5 @@ global.reset_memory = function () {
     for (const key in Memory) {
         if (key !== 'creeps') delete Memory[key];
     }
-    console.log("[INFO] Memory wiped.");
+    log.info("Memory wiped.");
 };

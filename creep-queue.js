@@ -1,3 +1,5 @@
+const log = require('./manager.log');
+
 /** init room memory for spawning if needed */
 function initRoomMemory(room, force = false) {
     if (!room.memory.spawn_queue || force) {
@@ -101,7 +103,7 @@ function dequeueCreep(room, dryRun = false, force = false) {
         const result = targetSpawn.spawnCreep(body, name, options);
 
         if (result === OK) {
-            console.log(`[INFO] Spawned ${role}: ${name} at ${targetSpawn.name}`);
+            log.info(`Spawned ${role}: ${name} at ${targetSpawn.name}`, room.name);
             spawned[targetSpawn.name] = true;
         } else {
             const shouldRequeue = (
@@ -115,7 +117,7 @@ function dequeueCreep(room, dryRun = false, force = false) {
 
             // log error and drop creep
             if (result !== ERR_NOT_ENOUGH_ENERGY && result !== ERR_BUSY) {
-                console.log(`[ERROR] Unable to spawn ${name} (${role}): ${result}`);
+                log.error(`Unable to spawn ${name} (${role}): ${result}`, room.name);
             }
         }
     }

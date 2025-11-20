@@ -1,3 +1,5 @@
+const log = require('./manager.log');
+
 // NOTE currently this is the defender logic
 var roleAttacker = {
     run: function (creep, struct) {
@@ -18,7 +20,7 @@ var roleAttacker = {
         if (creep.memory.attacking) {
             if (creep.attack(attack_target) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(attack_target, { visualizePathStyle: { stroke: '#ff0051' } });
-                console.log('[INFO] Attacker Creep: ' + creep.name + ' is attacking ' + attack_target.name + ' in room: ' + creep.room.name)
+                log.info('Attacker Creep: ' + creep.name + ' is attacking ' + attack_target.name + ' in room: ' + creep.room.name, creep.room.name);
             }
             if (rampartsAvailable.length > 0 && creep.pos != closestRampart.pos || creep.pos != closest_rampart_to_defender.pos) {
                 creep.moveTo(closestRampart);
@@ -37,7 +39,7 @@ var roleAttacker = {
                 let targetRampart = Game.getObjectById(creep.memory.targetRampart)
                 // If creep on targetRampat -> delete targetRampart memory and set inPlace to be true!
                 if (creep.pos.x === targetRampart.pos.x && creep.pos.y === targetRampart.pos.y) {
-                    console.log('[DEBUG] role.defender test msg')
+                    log.debug('role.defender test msg', creep.room.name);
                     delete creep.memory.targetRampart;
                     creep.memory.inPlace = true;
                 }

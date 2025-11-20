@@ -1,3 +1,5 @@
+const log = require('./manager.log');
+
 var roleDefender = {
     run: function (creep, struct) {
         var attack_targets = creep.room.find(FIND_HOSTILE_CREEPS);
@@ -17,7 +19,7 @@ var roleDefender = {
         if (creep.memory.attacking) {
             if (creep.attack(attack_target) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(attack_target, { visualizePathStyle: { stroke: '#ff0051' } });
-                console.log('[INFO] Attacker Creep: ' + creep.name + ' is attacking ' + attack_target.name + ' in room: ' + creep.room.name)
+                log.info('Defender Creep: ' + creep.name + ' is attacking ' + attack_target.name + ' in room: ' + creep.room.name, creep.room.name);
             }
             if (rampartsAvailable.length > 0 && creep.pos != closestRampart.pos || creep.pos != closest_rampart_to_defender.pos) {
                 creep.moveTo(closestRampart);
